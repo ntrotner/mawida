@@ -16,8 +16,11 @@ import (
 	"net/http"
 	database_location "template_backend/database/paths/location"
 	database_product "template_backend/database/paths/product"
+	database_rent_contract "template_backend/database/paths/rent_contract"
 	database_user "template_backend/database/paths/user"
 	openapi_common "template_backend/open-api/common"
+
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -189,23 +192,157 @@ func (s *UserAPIService) ProductsProductIdGet(ctx context.Context, productId str
 }
 
 // ProductsProductIdRentPost - Rent a product
-func (s *UserAPIService) ProductsProductIdRentPost(ctx context.Context, productId string, rentProductFormular RentProductFormular) (ImplResponse, error) {
-	// TODO - update ProductsProductIdRentPost with the required logic for this service method.
-	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+func (s *UserAPIService) ProductsProductIdRentPost(ctx context.Context, productId string, rentProductFormular RentProductFormular, r *http.Request) (ImplResponse, error) {
+	// Read token from request header
+	token, found := openapi_common.ReadTokenFromHeader(r)
+	if !found {
+		log.Error().Msg("Bearer format invalid")
+		return Response(http.StatusUnauthorized, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. Please check your credentials.",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(200, RentProductConfirmation{}) or use other options such as http.Ok ...
-	// return Response(200, RentProductConfirmation{}), nil
+	// Verify JWT token
+	_, content, err := database_user.VerifyJWT(&token)
+	if err != nil {
+		log.Error().Msg("Couldn't verify token")
+		return Response(http.StatusUnauthorized, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. Please check your credentials.",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
+	// Get user profile to check if confirmed
+	user := database_user.FindUserById(ctx, &content.ID)
+	if user == nil {
+		return Response(http.StatusUnauthorized, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "101",
+					Message: "No user found",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
+	if user.Roles != database_user.ConfirmedUser {
+		return Response(http.StatusForbidden, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. Only confirmed users can rent products.",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
+	// Get product from database
+	product := database_product.FindProductById(ctx, productId)
+	if product == nil || product.IsRented {
+		return Response(http.StatusNotFound, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Product is unavailable",
+				},
+			},
+		}), nil
+	}
 
-	return Response(http.StatusNotImplemented, nil), errors.New("ProductsProductIdRentPost method not implemented")
+	// Validate rental dates
+	startDate, err := time.Parse(time.DateOnly, rentProductFormular.RentalStartDate)
+	if err != nil {
+		return Response(http.StatusBadRequest, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Invalid rental start date format",
+				},
+			},
+		}), nil
+	}
+
+	endDate, err := time.Parse(time.DateOnly, rentProductFormular.RentalEndDate)
+	if err != nil {
+		return Response(http.StatusBadRequest, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Invalid rental end date format",
+				},
+			},
+		}), nil
+	}
+
+	// Calculate total amount
+	totalAmount := product.Pricing.Price * float32(endDate.Sub(startDate).Hours()/24)
+	if product.Pricing.Deposit > 0 {
+		totalAmount += product.Pricing.Deposit
+	}
+
+	// Create rent contract
+	contract := database_rent_contract.CreateRentContract(
+		ctx,
+		productId,
+		content.ID,
+		rentProductFormular.RentalStartDate,
+		rentProductFormular.RentalEndDate,
+		product.Pricing.Price,
+		product.Pricing.Deposit,
+		totalAmount,
+		rentProductFormular.PaymentMethodId,
+		rentProductFormular.LocationId,
+		rentProductFormular.LocationId,
+		rentProductFormular.AdditionalNotes,
+		rentProductFormular.DynamicAttributes,
+	)
+
+	if contract == nil {
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to create rent contract",
+				},
+			},
+		}), nil
+	}
+
+	// Update product rental status
+	product.IsRented = true
+	product.RenterInfo = &database_product.RenterInfo{
+		UserID:          content.ID,
+		RentalStartDate: rentProductFormular.RentalStartDate,
+		RentalEndDate:   rentProductFormular.RentalEndDate,
+		Status:          string(database_rent_contract.RentContractStatusPending),
+	}
+
+	updatedProduct := database_product.UpdateProduct(ctx, product)
+	if updatedProduct == nil {
+		// Rollback rent contract creation
+		database_rent_contract.DeleteRentContract(ctx, contract.ID, contract.Rev)
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to update product rental status",
+				},
+			},
+		}), nil
+	}
+
+	return Response(http.StatusOK, RentProductConfirmation{
+		RentContractId: contract.ID,
+	}), nil
 }
 
 // ProfileGet - Get user profile

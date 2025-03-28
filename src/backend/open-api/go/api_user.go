@@ -258,7 +258,7 @@ func (c *UserAPIController) ProductsProductIdRentPost(w http.ResponseWriter, r *
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.ProductsProductIdRentPost(r.Context(), productIdParam, rentProductFormularParam)
+	result, err := c.service.ProductsProductIdRentPost(r.Context(), productIdParam, rentProductFormularParam, r)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

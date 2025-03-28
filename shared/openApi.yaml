@@ -673,17 +673,19 @@ components:
       properties:
         userId:
           type: string
+          format: uuid
           description: Unique identifier for the user renting the product
         rentalStartDate:
           type: string
-          format: date
+          format: date-time
           description: The start date of the rental period
         rentalEndDate:
           type: string
-          format: date
+          format: date-time
           description: The end date of the rental period
         additionalNotes:
           type: string
+          maxLength: 1000
           description: Free text for additional notes or special instructions
         locationId:
           type: string

@@ -6,6 +6,7 @@ import (
 	"template_backend/common"
 	database_location "template_backend/database/paths/location"
 	database_product "template_backend/database/paths/product"
+	database_rent_contract "template_backend/database/paths/rent_contract"
 	database_user "template_backend/database/paths/user"
 	"time"
 
@@ -67,6 +68,7 @@ func Connect(ctx context.Context) {
 		database_user.USER_DB,
 		database_location.LOCATION_DB,
 		database_product.PRODUCT_DB,
+		database_rent_contract.RENT_CONTRACT_DB,
 	} {
 		createDatabase(ctx, value)
 	}
@@ -74,4 +76,5 @@ func Connect(ctx context.Context) {
 	go database_user.SetupUser(ctx, databases)
 	go database_location.SetupLocation(ctx, databases)
 	go database_product.SetupProduct(ctx, databases)
+	go database_rent_contract.SetupRentContract(ctx, databases)
 }

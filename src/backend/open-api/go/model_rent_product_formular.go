@@ -10,22 +10,24 @@
 
 package openapi
 
+import "template_backend/common"
+
 type RentProductFormular struct {
 
 	// Unique identifier for the user renting the product
-	UserId string `json:"userId"`
+	UserId string `json:"userId" validate:"required,uuid"`
 
 	// The start date of the rental period
-	RentalStartDate string `json:"rentalStartDate"`
+	RentalStartDate string `json:"rentalStartDate" validate:"required"`
 
 	// The end date of the rental period
-	RentalEndDate string `json:"rentalEndDate"`
+	RentalEndDate string `json:"rentalEndDate" validate:"required"`
 
 	// Free text for additional notes or special instructions
-	AdditionalNotes string `json:"additionalNotes,omitempty"`
+	AdditionalNotes string `json:"additionalNotes,omitempty" validate:"omitempty,max=1000"`
 
 	// Identifier for the location where the product will be picked up
-	LocationId string `json:"locationId"`
+	LocationId string `json:"locationId" validate:"required"`
 
 	// Identifier for the payment method used for the rental
 	PaymentMethodId string `json:"paymentMethodId"`
@@ -54,5 +56,5 @@ func AssertRentProductFormularRequired(obj RentProductFormular) error {
 
 // AssertRentProductFormularConstraints checks if the values respects the defined constraints
 func AssertRentProductFormularConstraints(obj RentProductFormular) error {
-	return nil
+	return common.Validate.Struct(obj)
 }
