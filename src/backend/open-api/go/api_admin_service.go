@@ -66,7 +66,7 @@ func (s *AdminAPIService) LocationsPost(ctx context.Context, location Location, 
 		location.BuildingName,
 		float64(location.Coordinates.Latitude),
 		float64(location.Coordinates.Longitude),
-		location.Coordinates.Notes,
+		location.Notes,
 	)
 	if err != nil {
 		log.Error().Str("id", location.Id).Msg("Failed to create location")
@@ -80,9 +80,8 @@ func (s *AdminAPIService) LocationsPost(ctx context.Context, location Location, 
 func (s *AdminAPIService) ProductsGet(ctx context.Context, r *http.Request) (ImplResponse, error) {
 	// if not authenticated then a sanitized version is send
 	token, found := openapi_common.ReadTokenFromHeader(r)
-	sanitizedProducts := []database_product.Product{}
 	if !found {
-		sanitizedProducts = database_product.GetAllProducts(ctx)
+		sanitizedProducts := database_product.GetAllProducts(ctx)
 		for i := range sanitizedProducts {
 			sanitizedProducts[i].DynamicAttributes = nil
 			sanitizedProducts[i].RenterInfo = nil
@@ -93,17 +92,21 @@ func (s *AdminAPIService) ProductsGet(ctx context.Context, r *http.Request) (Imp
 	_, content, err := database_user.VerifyJWT(&token)
 	if err != nil {
 		log.Error().Msg("Couldn't verify token")
-		return Response(200, sanitizedProducts), nil
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
 	}
 
 	user := database_user.FindUserById(ctx, &content.ID)
 	if user == nil {
 		log.Error().Str("id", content.ID).Msg("User not found")
-		return Response(200, sanitizedProducts), nil
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
 	}
 
 	if user.Roles != database_user.AdminUser {
-		log.Error().Str("id", content.ID).Msg("User is not an admin")
+		sanitizedProducts := database_product.GetAllProducts(ctx)
+		for i := range sanitizedProducts {
+			sanitizedProducts[i].DynamicAttributes = nil
+			sanitizedProducts[i].RenterInfo = nil
+		}
 		return Response(200, sanitizedProducts), nil
 	}
 

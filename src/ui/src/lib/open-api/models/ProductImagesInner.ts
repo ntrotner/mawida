@@ -24,7 +24,7 @@ export interface ProductImagesInner {
      * @type {string}
      * @memberof ProductImagesInner
      */
-    id: string;
+    iD: string;
     /**
      * Name of the image
      * @type {string}
@@ -44,7 +44,7 @@ export interface ProductImagesInner {
  */
 export function instanceOfProductImagesInner(value: object): boolean {
     let isInstance = true;
-    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "iD" in value;
     isInstance = isInstance && "name" in value;
     isInstance = isInstance && "data" in value;
 
@@ -61,7 +61,7 @@ export function ProductImagesInnerFromJSONTyped(json: any, ignoreDiscriminator: 
     }
     return {
         
-        'id': json['id'],
+        'iD': json['ID'],
         'name': json['name'],
         'data': json['data'],
     };
@@ -76,7 +76,7 @@ export function ProductImagesInnerToJSON(value?: ProductImagesInner | null): any
     }
     return {
         
-        'id': value.id,
+        'ID': value.iD,
         'name': value.name,
         'data': value.data,
     };

@@ -10,18 +10,16 @@
 
 package openapi
 
+import "template_backend/common"
+
 type PickupConfirmation struct {
-
-	// Unique identifier for the user picking up the product
-	UserId string `json:"userId"`
-
-	PickupImages []string `json:"pickupImages"`
+	// Base64 encoded image data
+	PickupImages []string `json:"pickupImages" validate:"required,min=1,max=10,dive,required"`
 }
 
 // AssertPickupConfirmationRequired checks if the required fields are not zero-ed
 func AssertPickupConfirmationRequired(obj PickupConfirmation) error {
 	elements := map[string]interface{}{
-		"userId":       obj.UserId,
 		"pickupImages": obj.PickupImages,
 	}
 	for name, el := range elements {
@@ -35,5 +33,5 @@ func AssertPickupConfirmationRequired(obj PickupConfirmation) error {
 
 // AssertPickupConfirmationConstraints checks if the values respects the defined constraints
 func AssertPickupConfirmationConstraints(obj PickupConfirmation) error {
-	return nil
+	return common.Validate.Struct(obj)
 }

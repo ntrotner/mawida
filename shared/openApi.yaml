@@ -624,13 +624,13 @@ components:
               type: object
               properties:
                 rentalStartDate:
-                  type: string
-                  format: date
-                  description: Start date of the rental period
+                  type: integer
+                  format: int64
+                  description: Unix timestamp for the start date of the rental period
                 rentalEndDate:
-                  type: string
-                  format: date
-                  description: End date of the rental period
+                  type: integer
+                  format: int64
+                  description: Unix timestamp for the end date of the rental period
                 expectedDuration:
                   type: string
                   description: Expected duration of the rental
@@ -664,25 +664,21 @@ components:
               type: number
               format: float
               description: Longitude of the product location
-            notes:
-              type: string
-              description: Additional notes or annotations about the coordinates
-          description: Coordinates and notes for the product location
+          description: Coordinates of the product location
+        notes:
+          type: string
+          description: Additional notes or annotations about the location
     RentProductFormular:
       type: object
       properties:
-        userId:
-          type: string
-          format: uuid
-          description: Unique identifier for the user renting the product
         rentalStartDate:
-          type: string
-          format: date-time
-          description: The start date of the rental period
+          type: integer
+          format: int64
+          description: Unix timestamp for the start date of the rental period
         rentalEndDate:
-          type: string
-          format: date-time
-          description: The end date of the rental period
+          type: integer
+          format: int64
+          description: Unix timestamp for the end date of the rental period
         additionalNotes:
           type: string
           maxLength: 1000
@@ -698,7 +694,6 @@ components:
           additionalProperties: true
           description: Dynamic attributes for the rental request
       required:
-        - userId
         - rentalStartDate
         - rentalEndDate
         - locationId
@@ -712,9 +707,6 @@ components:
     PickupConfirmation:
       type: object
       properties:
-        userId:
-          type: string
-          description: Unique identifier for the user picking up the product
         pickupImages:
           type: array
           items:
@@ -722,14 +714,10 @@ components:
             format: byte
             description: Base64 encoded image data
       required:
-        - userId
         - pickupImages
     ReturnProduct:
       type: object
       properties:
-        userId:
-          type: string
-          description: Unique identifier for the user returning the product
         returnImages:
           type: array
           items:
@@ -740,6 +728,5 @@ components:
           type: string
           description: Free text for additional notes or special instructions
       required:
-        - userId
         - returnImages
         - additionalNotes

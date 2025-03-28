@@ -13,15 +13,11 @@ package openapi
 import "template_backend/common"
 
 type RentProductFormular struct {
-
-	// Unique identifier for the user renting the product
-	UserId string `json:"userId" validate:"required,uuid"`
-
 	// The start date of the rental period
-	RentalStartDate string `json:"rentalStartDate" validate:"required"`
+	RentalStartDate int64 `json:"rentalStartDate" validate:"required"`
 
 	// The end date of the rental period
-	RentalEndDate string `json:"rentalEndDate" validate:"required"`
+	RentalEndDate int64 `json:"rentalEndDate" validate:"required"`
 
 	// Free text for additional notes or special instructions
 	AdditionalNotes string `json:"additionalNotes,omitempty" validate:"omitempty,max=1000"`
@@ -30,7 +26,7 @@ type RentProductFormular struct {
 	LocationId string `json:"locationId" validate:"required"`
 
 	// Identifier for the payment method used for the rental
-	PaymentMethodId string `json:"paymentMethodId"`
+	PaymentMethodId string `json:"paymentMethodId" validate:"required"`
 
 	// Dynamic attributes for the rental request
 	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty"`
@@ -39,7 +35,6 @@ type RentProductFormular struct {
 // AssertRentProductFormularRequired checks if the required fields are not zero-ed
 func AssertRentProductFormularRequired(obj RentProductFormular) error {
 	elements := map[string]interface{}{
-		"userId":          obj.UserId,
 		"rentalStartDate": obj.RentalStartDate,
 		"rentalEndDate":   obj.RentalEndDate,
 		"locationId":      obj.LocationId,

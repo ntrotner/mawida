@@ -14,7 +14,7 @@
 
 import { exists, mapValues } from '../runtime';
 /**
- * Coordinates and notes for the product location
+ * Coordinates of the product location
  * @export
  * @interface LocationCoordinates
  */
@@ -31,12 +31,6 @@ export interface LocationCoordinates {
      * @memberof LocationCoordinates
      */
     longitude?: number;
-    /**
-     * Additional notes or annotations about the coordinates
-     * @type {string}
-     * @memberof LocationCoordinates
-     */
-    notes?: string;
 }
 
 /**
@@ -60,7 +54,6 @@ export function LocationCoordinatesFromJSONTyped(json: any, ignoreDiscriminator:
         
         'latitude': !exists(json, 'latitude') ? undefined : json['latitude'],
         'longitude': !exists(json, 'longitude') ? undefined : json['longitude'],
-        'notes': !exists(json, 'notes') ? undefined : json['notes'],
     };
 }
 
@@ -75,7 +68,6 @@ export function LocationCoordinatesToJSON(value?: LocationCoordinates | null): a
         
         'latitude': value.latitude,
         'longitude': value.longitude,
-        'notes': value.notes,
     };
 }
 

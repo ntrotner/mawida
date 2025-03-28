@@ -62,6 +62,12 @@ export interface Location {
      * @memberof Location
      */
     coordinates?: LocationCoordinates;
+    /**
+     * Additional notes or annotations about the location
+     * @type {string}
+     * @memberof Location
+     */
+    notes?: string;
 }
 
 /**
@@ -89,6 +95,7 @@ export function LocationFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
         'postalCode': !exists(json, 'postalCode') ? undefined : json['postalCode'],
         'buildingName': !exists(json, 'buildingName') ? undefined : json['buildingName'],
         'coordinates': !exists(json, 'coordinates') ? undefined : LocationCoordinatesFromJSON(json['coordinates']),
+        'notes': !exists(json, 'notes') ? undefined : json['notes'],
     };
 }
 
@@ -107,6 +114,7 @@ export function LocationToJSON(value?: Location | null): any {
         'postalCode': value.postalCode,
         'buildingName': value.buildingName,
         'coordinates': LocationCoordinatesToJSON(value.coordinates),
+        'notes': value.notes,
     };
 }
 

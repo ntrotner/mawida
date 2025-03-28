@@ -10,20 +10,8 @@ import (
 func createFindProductQuery(id *string, fields []interface{}) database_common.Query {
 	query := database_common.Query{
 		Selector: map[string]interface{}{},
-		Fields: []interface{}{
-			"_id",
-			"_rev",
-			"name",
-			"description",
-			"images",
-			"documents",
-			"location",
-			"pricing",
-			"dynamicAttributes",
-			"isRented",
-			"renterInfo",
-		},
-		Limit: 1,
+		Fields:   fields,
+		Limit:    1,
 	}
 
 	if id != nil {
@@ -35,11 +23,22 @@ func createFindProductQuery(id *string, fields []interface{}) database_common.Qu
 
 func FindProductById(ctx context.Context, id string) *Product {
 	if DatabaseProduct == nil {
-		log.Error().Msg("Database connection not initialized")
 		return nil
 	}
 
-	query := createFindProductQuery(&id, nil)
+	query := createFindProductQuery(&id, []interface{}{
+		"_id",
+		"_rev",
+		"name",
+		"description",
+		"images",
+		"documents",
+		"location",
+		"pricing",
+		"dynamicAttributes",
+		"isRented",
+		"renterInfo",
+	})
 	rows, err := DatabaseProduct.Find(ctx, query)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to retrieve product")
@@ -61,7 +60,6 @@ func FindProductById(ctx context.Context, id string) *Product {
 
 func GetAllProducts(ctx context.Context) []Product {
 	if DatabaseProduct == nil {
-		log.Error().Msg("Database connection not initialized")
 		return nil
 	}
 
@@ -110,7 +108,6 @@ func GetAllProducts(ctx context.Context) []Product {
 
 func GetProductsByLocation(ctx context.Context, locationId string) []Product {
 	if DatabaseProduct == nil {
-		log.Error().Msg("Database connection not initialized")
 		return nil
 	}
 

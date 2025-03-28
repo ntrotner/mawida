@@ -106,8 +106,8 @@ func (s *UserAPIService) LocationLocationIdGet(ctx context.Context, locationId s
 		Coordinates: LocationCoordinates{
 			Longitude: float32(location.Longitude),
 			Latitude:  float32(location.Latitude),
-			Notes:     location.Notes,
 		},
+		Notes: location.Notes,
 	}
 
 	return Response(200, formattedLocation), nil
@@ -133,8 +133,8 @@ func (s *UserAPIService) LocationsGet(ctx context.Context) (ImplResponse, error)
 			Coordinates: LocationCoordinates{
 				Longitude: float32(location.Longitude),
 				Latitude:  float32(location.Latitude),
-				Notes:     location.Notes,
 			},
+			Notes: location.Notes,
 		}
 	}
 
@@ -162,9 +162,8 @@ func (s *UserAPIService) PasswordResetPost(ctx context.Context, passwordReset Pa
 func (s *UserAPIService) ProductsProductIdGet(ctx context.Context, productId string, r *http.Request) (ImplResponse, error) {
 	// if not authenticated then a sanitized version is send
 	token, found := openapi_common.ReadTokenFromHeader(r)
-	sanitizedProduct := database_product.Product{}
 	if !found {
-		sanitizedProduct = *database_product.FindProductById(ctx, productId)
+		sanitizedProduct := *database_product.FindProductById(ctx, productId)
 		sanitizedProduct.DynamicAttributes = nil
 		sanitizedProduct.RenterInfo = nil
 		return Response(200, sanitizedProduct), nil
@@ -173,17 +172,19 @@ func (s *UserAPIService) ProductsProductIdGet(ctx context.Context, productId str
 	_, content, err := database_user.VerifyJWT(&token)
 	if err != nil {
 		log.Error().Msg("Couldn't verify token")
-		return Response(200, sanitizedProduct), nil
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
 	}
 
 	user := database_user.FindUserById(ctx, &content.ID)
 	if user == nil {
 		log.Error().Str("id", content.ID).Msg("User not found")
-		return Response(200, sanitizedProduct), nil
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
 	}
 
 	if user.Roles != database_user.AdminUser {
-		log.Error().Str("id", content.ID).Msg("User is not an admin")
+		sanitizedProduct := *database_product.FindProductById(ctx, productId)
+		sanitizedProduct.DynamicAttributes = nil
+		sanitizedProduct.RenterInfo = nil
 		return Response(200, sanitizedProduct), nil
 	}
 
@@ -258,42 +259,40 @@ func (s *UserAPIService) ProductsProductIdRentPost(ctx context.Context, productI
 		}), nil
 	}
 
-	// Validate rental dates
-	startDate, err := time.Parse(time.DateOnly, rentProductFormular.RentalStartDate)
-	if err != nil {
-		return Response(http.StatusBadRequest, Error{
+	// Check if location is available and exists for product
+	location := database_location.FindLocationById(ctx, rentProductFormular.LocationId)
+	if location == nil || product.Location != rentProductFormular.LocationId {
+		return Response(http.StatusNotFound, Error{
 			ErrorMessages: []Message{
-				{
-					Code:    "200",
-					Message: "Invalid rental start date format",
-				},
+				{Code: "200", Message: "Location not found"},
 			},
 		}), nil
 	}
 
-	endDate, err := time.Parse(time.DateOnly, rentProductFormular.RentalEndDate)
-	if err != nil {
+	// Only allow start date to be today
+	startDate := time.Unix(rentProductFormular.RentalStartDate, 0)
+	endDate := time.Unix(rentProductFormular.RentalEndDate, 0)
+	days := int(endDate.Sub(startDate).Hours() / 24)
+	today := time.Now()
+	todayAtZero := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
+	tomorrow := todayAtZero.AddDate(0, 0, 1)
+	tomorrowAtZero := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
+	if !(startDate.After(todayAtZero) && startDate.Before(tomorrowAtZero)) {
 		return Response(http.StatusBadRequest, Error{
 			ErrorMessages: []Message{
-				{
-					Code:    "200",
-					Message: "Invalid rental end date format",
-				},
+				{Code: "200", Message: "Start date cannot be in the past or in the future"},
 			},
 		}), nil
 	}
 
 	// Calculate total amount
-	totalAmount := product.Pricing.Price * float32(endDate.Sub(startDate).Hours()/24)
-	if product.Pricing.Deposit > 0 {
-		totalAmount += product.Pricing.Deposit
-	}
+	totalAmount := database_product.CalculateTotalAmount(product, days)
 
 	// Create rent contract
 	contract := database_rent_contract.CreateRentContract(
 		ctx,
 		productId,
-		content.ID,
+		user.ID,
 		rentProductFormular.RentalStartDate,
 		rentProductFormular.RentalEndDate,
 		product.Pricing.Price,
@@ -320,10 +319,9 @@ func (s *UserAPIService) ProductsProductIdRentPost(ctx context.Context, productI
 	// Update product rental status
 	product.IsRented = true
 	product.RenterInfo = &database_product.RenterInfo{
-		UserID:          content.ID,
+		UserID:          user.ID,
 		RentalStartDate: rentProductFormular.RentalStartDate,
 		RentalEndDate:   rentProductFormular.RentalEndDate,
-		Status:          string(database_rent_contract.RentContractStatusPending),
 	}
 
 	updatedProduct := database_product.UpdateProduct(ctx, product)
@@ -436,22 +434,6 @@ func (s *UserAPIService) RentalsRentContractIdPickupPost(ctx context.Context, re
 				{
 					Code:    "001",
 					Message: "Failed to find product",
-				},
-			},
-		}), nil
-	}
-
-	product.RenterInfo.Status = string(database_rent_contract.RentContractStatusActive)
-	updatedProduct := database_product.UpdateProduct(ctx, product)
-	if updatedProduct == nil {
-		// Rollback contract status
-		contract.Status = database_rent_contract.RentContractStatusPending
-		database_rent_contract.UpdateRentContract(ctx, contract)
-		return Response(http.StatusInternalServerError, Error{
-			ErrorMessages: []Message{
-				{
-					Code:    "001",
-					Message: "Failed to update product rental status",
 				},
 			},
 		}), nil

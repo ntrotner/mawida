@@ -12,7 +12,7 @@ package openapi
 
 import "template_backend/common"
 
-// LocationCoordinates - Coordinates and notes for the product location
+// LocationCoordinates - Coordinates of the product location
 type LocationCoordinates struct {
 
 	// Latitude of the product location
@@ -20,9 +20,6 @@ type LocationCoordinates struct {
 
 	// Longitude of the product location
 	Longitude float32 `json:"longitude,omitempty" validate:"required,gte=-180,lte=180"`
-
-	// Additional notes or annotations about the coordinates
-	Notes string `json:"notes,omitempty" validate:"omitempty,max=500"`
 }
 
 // AssertLocationCoordinatesRequired checks if the required fields are not zero-ed

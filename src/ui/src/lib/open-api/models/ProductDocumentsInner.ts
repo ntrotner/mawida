@@ -24,7 +24,7 @@ export interface ProductDocumentsInner {
      * @type {string}
      * @memberof ProductDocumentsInner
      */
-    id: string;
+    iD: string;
     /**
      * Name of the document
      * @type {string}
@@ -44,7 +44,7 @@ export interface ProductDocumentsInner {
  */
 export function instanceOfProductDocumentsInner(value: object): boolean {
     let isInstance = true;
-    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "iD" in value;
     isInstance = isInstance && "name" in value;
     isInstance = isInstance && "data" in value;
 
@@ -61,7 +61,7 @@ export function ProductDocumentsInnerFromJSONTyped(json: any, ignoreDiscriminato
     }
     return {
         
-        'id': json['id'],
+        'iD': json['ID'],
         'name': json['name'],
         'data': json['data'],
     };
@@ -76,7 +76,7 @@ export function ProductDocumentsInnerToJSON(value?: ProductDocumentsInner | null
     }
     return {
         
-        'id': value.id,
+        'ID': value.iD,
         'name': value.name,
         'data': value.data,
     };

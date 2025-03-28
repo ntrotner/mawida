@@ -33,7 +33,6 @@ type ProductPricing struct {
 
 type RenterInfo struct {
 	UserID          string `json:"userId"`
-	RentalStartDate string `json:"rentalStartDate"`
-	RentalEndDate   string `json:"rentalEndDate"`
-	Status          string `json:"status"`
+	RentalStartDate int64  `json:"rentalStartDate"`
+	RentalEndDate   int64  `json:"rentalEndDate"`
 }

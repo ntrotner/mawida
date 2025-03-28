@@ -11,10 +11,6 @@
 package openapi
 
 type ReturnProduct struct {
-
-	// Unique identifier for the user returning the product
-	UserId string `json:"userId"`
-
 	ReturnImages []string `json:"returnImages"`
 
 	// Free text for additional notes or special instructions
@@ -24,7 +20,6 @@ type ReturnProduct struct {
 // AssertReturnProductRequired checks if the required fields are not zero-ed
 func AssertReturnProductRequired(obj ReturnProduct) error {
 	elements := map[string]interface{}{
-		"userId":          obj.UserId,
 		"returnImages":    obj.ReturnImages,
 		"additionalNotes": obj.AdditionalNotes,
 	}

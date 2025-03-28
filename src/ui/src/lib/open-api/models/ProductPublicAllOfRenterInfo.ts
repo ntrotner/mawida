@@ -20,17 +20,17 @@ import { exists, mapValues } from '../runtime';
  */
 export interface ProductPublicAllOfRenterInfo {
     /**
-     * Start date of the rental period
-     * @type {Date}
+     * Unix timestamp for the start date of the rental period
+     * @type {number}
      * @memberof ProductPublicAllOfRenterInfo
      */
-    rentalStartDate?: Date;
+    rentalStartDate?: number;
     /**
-     * End date of the rental period
-     * @type {Date}
+     * Unix timestamp for the end date of the rental period
+     * @type {number}
      * @memberof ProductPublicAllOfRenterInfo
      */
-    rentalEndDate?: Date;
+    rentalEndDate?: number;
     /**
      * Expected duration of the rental
      * @type {string}
@@ -58,8 +58,8 @@ export function ProductPublicAllOfRenterInfoFromJSONTyped(json: any, ignoreDiscr
     }
     return {
         
-        'rentalStartDate': !exists(json, 'rentalStartDate') ? undefined : (new Date(json['rentalStartDate'])),
-        'rentalEndDate': !exists(json, 'rentalEndDate') ? undefined : (new Date(json['rentalEndDate'])),
+        'rentalStartDate': !exists(json, 'rentalStartDate') ? undefined : json['rentalStartDate'],
+        'rentalEndDate': !exists(json, 'rentalEndDate') ? undefined : json['rentalEndDate'],
         'expectedDuration': !exists(json, 'expectedDuration') ? undefined : json['expectedDuration'],
     };
 }
@@ -73,8 +73,8 @@ export function ProductPublicAllOfRenterInfoToJSON(value?: ProductPublicAllOfRen
     }
     return {
         
-        'rentalStartDate': value.rentalStartDate === undefined ? undefined : (value.rentalStartDate.toISOString().substring(0,10)),
-        'rentalEndDate': value.rentalEndDate === undefined ? undefined : (value.rentalEndDate.toISOString().substring(0,10)),
+        'rentalStartDate': value.rentalStartDate,
+        'rentalEndDate': value.rentalEndDate,
         'expectedDuration': value.expectedDuration,
     };
 }

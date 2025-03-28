@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func CreateRentContract(ctx context.Context, productId string, userId string, rentalStartDate string, rentalEndDate string, price float32, deposit float32, totalAmount float32, paymentMethodId string, pickupLocationId string, returnLocationId string, additionalNotes string, dynamicAttributes map[string]interface{}) *RentContract {
+func CreateRentContract(ctx context.Context, productId string, userId string, rentalStartDate int64, rentalEndDate int64, price float32, deposit float32, totalAmount float32, paymentMethodId string, pickupLocationId string, returnLocationId string, additionalNotes string, dynamicAttributes map[string]interface{}) *RentContract {
 	if DatabaseRentContract == nil {
 		return nil
 	}
@@ -28,8 +28,8 @@ func CreateRentContract(ctx context.Context, productId string, userId string, re
 		ReturnLocationID:  returnLocationId,
 		AdditionalNotes:   additionalNotes,
 		DynamicAttributes: dynamicAttributes,
-		CreatedAt:         time.Now(),
-		UpdatedAt:         time.Now(),
+		CreatedAt:         time.Now().Unix(),
+		UpdatedAt:         time.Now().Unix(),
 	}
 
 	_, err := DatabaseRentContract.Put(ctx, contract.ID, contract)
@@ -52,7 +52,7 @@ func UpdateRentContract(ctx context.Context, contract *RentContract) *RentContra
 		return nil
 	}
 
-	contract.UpdatedAt = time.Now()
+	contract.UpdatedAt = time.Now().Unix()
 	_, err := DatabaseRentContract.Put(ctx, contract.ID, contract)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to update rent contract")
@@ -89,7 +89,7 @@ func UpdateRentContractStatus(ctx context.Context, id string, newStatus RentCont
 	}
 
 	contract.Status = newStatus
-	contract.UpdatedAt = time.Now()
+	contract.UpdatedAt = time.Now().Unix()
 
 	_, err := DatabaseRentContract.Put(ctx, contract.ID, contract)
 	if err != nil {

@@ -29,7 +29,7 @@ type Product struct {
 	Documents []ProductDocumentsInner `json:"documents,omitempty" validate:"omitempty,dive"`
 
 	// Location ID of the product
-	Location string `json:"location" validate:"required,uuid"`
+	Location string `json:"location" validate:"required"`
 
 	Pricing ProductPricing `json:"pricing" validate:"required"`
 

@@ -45,6 +45,12 @@ import {
  */
 export interface ProductPublic {
     /**
+     * Unique identifier for the product
+     * @type {string}
+     * @memberof ProductPublic
+     */
+    iD?: string;
+    /**
      * Name of the product
      * @type {string}
      * @memberof ProductPublic
@@ -86,12 +92,6 @@ export interface ProductPublic {
      * @memberof ProductPublic
      */
     dynamicAttributes?: { [key: string]: any; };
-    /**
-     * Unique identifier for the product
-     * @type {string}
-     * @memberof ProductPublic
-     */
-    id?: string;
     /**
      * Indicates whether the product is currently rented
      * @type {boolean}
@@ -141,6 +141,7 @@ export function ProductPublicFromJSONTyped(json: any, ignoreDiscriminator: boole
     }
     return {
         
+        'iD': !exists(json, 'ID') ? undefined : json['ID'],
         'name': json['name'],
         'description': json['description'],
         'images': !exists(json, 'images') ? undefined : ((json['images'] as Array<any>).map(ProductImagesInnerFromJSON)),
@@ -148,7 +149,6 @@ export function ProductPublicFromJSONTyped(json: any, ignoreDiscriminator: boole
         'location': json['location'],
         'pricing': ProductPricingFromJSON(json['pricing']),
         'dynamicAttributes': !exists(json, 'dynamicAttributes') ? undefined : json['dynamicAttributes'],
-        'id': !exists(json, 'id') ? undefined : json['id'],
         'isRented': !exists(json, 'isRented') ? undefined : json['isRented'],
         'isCurrentUserRenter': !exists(json, 'isCurrentUserRenter') ? undefined : json['isCurrentUserRenter'],
         'qrCodeUrl': !exists(json, 'qrCodeUrl') ? undefined : json['qrCodeUrl'],
@@ -165,6 +165,7 @@ export function ProductPublicToJSON(value?: ProductPublic | null): any {
     }
     return {
         
+        'ID': value.iD,
         'name': value.name,
         'description': value.description,
         'images': value.images === undefined ? undefined : ((value.images as Array<any>).map(ProductImagesInnerToJSON)),
@@ -172,7 +173,6 @@ export function ProductPublicToJSON(value?: ProductPublic | null): any {
         'location': value.location,
         'pricing': ProductPricingToJSON(value.pricing),
         'dynamicAttributes': value.dynamicAttributes,
-        'id': value.id,
         'isRented': value.isRented,
         'isCurrentUserRenter': value.isCurrentUserRenter,
         'qrCodeUrl': value.qrCodeUrl,

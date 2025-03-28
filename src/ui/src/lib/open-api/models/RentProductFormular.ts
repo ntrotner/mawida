@@ -26,17 +26,17 @@ export interface RentProductFormular {
      */
     userId: string;
     /**
-     * The start date of the rental period
-     * @type {Date}
+     * Unix timestamp for the start date of the rental period
+     * @type {number}
      * @memberof RentProductFormular
      */
-    rentalStartDate: Date;
+    rentalStartDate: number;
     /**
-     * The end date of the rental period
-     * @type {Date}
+     * Unix timestamp for the end date of the rental period
+     * @type {number}
      * @memberof RentProductFormular
      */
-    rentalEndDate: Date;
+    rentalEndDate: number;
     /**
      * Free text for additional notes or special instructions
      * @type {string}
@@ -88,8 +88,8 @@ export function RentProductFormularFromJSONTyped(json: any, ignoreDiscriminator:
     return {
         
         'userId': json['userId'],
-        'rentalStartDate': (new Date(json['rentalStartDate'])),
-        'rentalEndDate': (new Date(json['rentalEndDate'])),
+        'rentalStartDate': json['rentalStartDate'],
+        'rentalEndDate': json['rentalEndDate'],
         'additionalNotes': !exists(json, 'additionalNotes') ? undefined : json['additionalNotes'],
         'locationId': json['locationId'],
         'paymentMethodId': json['paymentMethodId'],
@@ -107,8 +107,8 @@ export function RentProductFormularToJSON(value?: RentProductFormular | null): a
     return {
         
         'userId': value.userId,
-        'rentalStartDate': (value.rentalStartDate.toISOString().substring(0,10)),
-        'rentalEndDate': (value.rentalEndDate.toISOString().substring(0,10)),
+        'rentalStartDate': value.rentalStartDate,
+        'rentalEndDate': value.rentalEndDate,
         'additionalNotes': value.additionalNotes,
         'locationId': value.locationId,
         'paymentMethodId': value.paymentMethodId,

@@ -30,6 +30,9 @@ type Location struct {
 	BuildingName string `json:"buildingName,omitempty" validate:"omitempty,min=2,max=100"`
 
 	Coordinates LocationCoordinates `json:"coordinates,omitempty" validate:"required"`
+
+	// Additional notes or annotations about the location
+	Notes string `json:"notes,omitempty" validate:"omitempty,max=500"`
 }
 
 // AssertLocationRequired checks if the required fields are not zero-ed
