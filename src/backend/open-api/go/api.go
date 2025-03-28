@@ -15,6 +15,18 @@ import (
 	"net/http"
 )
 
+// AdminAPIRouter defines the required methods for binding the api requests to a responses for the AdminAPI
+// The AdminAPIRouter implementation should parse necessary information from the http request,
+// pass the data to a AdminAPIServicer to perform the required actions, then write the service results to the http response.
+type AdminAPIRouter interface {
+	LocationLocationIdGet(http.ResponseWriter, *http.Request)
+	LocationsGet(http.ResponseWriter, *http.Request)
+	LocationsPost(http.ResponseWriter, *http.Request)
+	ProductsGet(http.ResponseWriter, *http.Request)
+	ProductsPost(http.ResponseWriter, *http.Request)
+	ProductsProductIdGet(http.ResponseWriter, *http.Request)
+}
+
 // AuthenticationAPIRouter defines the required methods for binding the api requests to a responses for the AuthenticationAPI
 // The AuthenticationAPIRouter implementation should parse necessary information from the http request,
 // pass the data to a AuthenticationAPIServicer to perform the required actions, then write the service results to the http response.
@@ -23,6 +35,15 @@ type AuthenticationAPIRouter interface {
 	LogoutPost(http.ResponseWriter, *http.Request)
 	RefreshTokenPost(http.ResponseWriter, *http.Request)
 	RegisterPost(http.ResponseWriter, *http.Request)
+}
+
+// RentalAPIRouter defines the required methods for binding the api requests to a responses for the RentalAPI
+// The RentalAPIRouter implementation should parse necessary information from the http request,
+// pass the data to a RentalAPIServicer to perform the required actions, then write the service results to the http response.
+type RentalAPIRouter interface {
+	ProductsProductIdRentPost(http.ResponseWriter, *http.Request)
+	RentalsRentContractIdPickupPost(http.ResponseWriter, *http.Request)
+	RentalsRentContractIdReturnPost(http.ResponseWriter, *http.Request)
 }
 
 // StatusAPIRouter defines the required methods for binding the api requests to a responses for the StatusAPI
@@ -38,8 +59,27 @@ type StatusAPIRouter interface {
 type UserAPIRouter interface {
 	ChangeEmailPost(http.ResponseWriter, *http.Request)
 	ChangePasswordPost(http.ResponseWriter, *http.Request)
+	LocationLocationIdGet(http.ResponseWriter, *http.Request)
+	LocationsGet(http.ResponseWriter, *http.Request)
 	PasswordResetPost(http.ResponseWriter, *http.Request)
+	ProductsProductIdGet(http.ResponseWriter, *http.Request)
+	ProductsProductIdRentPost(http.ResponseWriter, *http.Request)
 	ProfileGet(http.ResponseWriter, *http.Request)
+	RentalsRentContractIdPickupPost(http.ResponseWriter, *http.Request)
+	RentalsRentContractIdReturnPost(http.ResponseWriter, *http.Request)
+}
+
+// AdminAPIServicer defines the api actions for the AdminAPI service
+// This interface intended to stay up to date with the openapi yaml used to generate it,
+// while the service implementation can be ignored with the .openapi-generator-ignore file
+// and updated with the logic required for the API.
+type AdminAPIServicer interface {
+	LocationLocationIdGet(context.Context, string) (ImplResponse, error)
+	LocationsGet(context.Context) (ImplResponse, error)
+	LocationsPost(context.Context, Location) (ImplResponse, error)
+	ProductsGet(context.Context) (ImplResponse, error)
+	ProductsPost(context.Context, Product) (ImplResponse, error)
+	ProductsProductIdGet(context.Context, string) (ImplResponse, error)
 }
 
 // AuthenticationAPIServicer defines the api actions for the AuthenticationAPI service
@@ -51,6 +91,16 @@ type AuthenticationAPIServicer interface {
 	LogoutPost(context.Context, *http.Request) (ImplResponse, error)
 	RefreshTokenPost(context.Context, http.ResponseWriter, *http.Request) (ImplResponse, error)
 	RegisterPost(context.Context, UserRegistration, http.ResponseWriter) (ImplResponse, error)
+}
+
+// RentalAPIServicer defines the api actions for the RentalAPI service
+// This interface intended to stay up to date with the openapi yaml used to generate it,
+// while the service implementation can be ignored with the .openapi-generator-ignore file
+// and updated with the logic required for the API.
+type RentalAPIServicer interface {
+	ProductsProductIdRentPost(context.Context, string, RentProductFormular) (ImplResponse, error)
+	RentalsRentContractIdPickupPost(context.Context, string, PickupConfirmation) (ImplResponse, error)
+	RentalsRentContractIdReturnPost(context.Context, string, ReturnProduct) (ImplResponse, error)
 }
 
 // StatusAPIServicer defines the api actions for the StatusAPI service
@@ -68,6 +118,12 @@ type StatusAPIServicer interface {
 type UserAPIServicer interface {
 	ChangeEmailPost(context.Context, ChangeEmail, *http.Request) (ImplResponse, error)
 	ChangePasswordPost(context.Context, ChangePassword, *http.Request) (ImplResponse, error)
+	LocationLocationIdGet(context.Context, string) (ImplResponse, error)
+	LocationsGet(context.Context) (ImplResponse, error)
 	PasswordResetPost(context.Context, PasswordReset) (ImplResponse, error)
+	ProductsProductIdGet(context.Context, string) (ImplResponse, error)
+	ProductsProductIdRentPost(context.Context, string, RentProductFormular) (ImplResponse, error)
 	ProfileGet(context.Context, *http.Request) (ImplResponse, error)
+	RentalsRentContractIdPickupPost(context.Context, string, PickupConfirmation) (ImplResponse, error)
+	RentalsRentContractIdReturnPost(context.Context, string, ReturnProduct) (ImplResponse, error)
 }

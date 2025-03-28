@@ -83,6 +83,37 @@ func (s *UserAPIService) ChangePasswordPost(ctx context.Context, changePassword 
 	return Response(200, Success{}), nil
 }
 
+// LocationLocationIdGet - Retrieve a single location
+func (s *UserAPIService) LocationLocationIdGet(ctx context.Context, locationId string) (ImplResponse, error) {
+	// TODO - update LocationLocationIdGet with the required logic for this service method.
+	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Location{}) or use other options such as http.Ok ...
+	// return Response(200, Location{}), nil
+
+	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
+	// return Response(401, Error{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
+	// return Response(404, Error{}), nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("LocationLocationIdGet method not implemented")
+}
+
+// LocationsGet - Retrieve all locations
+func (s *UserAPIService) LocationsGet(ctx context.Context) (ImplResponse, error) {
+	// TODO - update LocationsGet with the required logic for this service method.
+	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, []Location{}) or use other options such as http.Ok ...
+	// return Response(200, []Location{}), nil
+
+	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
+	// return Response(401, Error{}), nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("LocationsGet method not implemented")
+}
+
 // PasswordResetPost - Initiate password reset
 func (s *UserAPIService) PasswordResetPost(ctx context.Context, passwordReset PasswordReset) (ImplResponse, error) {
 	// TODO - update PasswordResetPost with the required logic for this service method.
@@ -100,6 +131,43 @@ func (s *UserAPIService) PasswordResetPost(ctx context.Context, passwordReset Pa
 	return Response(http.StatusNotImplemented, nil), errors.New("PasswordResetPost method not implemented")
 }
 
+// ProductsProductIdGet - Retrieve a single product
+func (s *UserAPIService) ProductsProductIdGet(ctx context.Context, productId string) (ImplResponse, error) {
+	// TODO - update ProductsProductIdGet with the required logic for this service method.
+	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, ProductsProductIdGet200Response{}) or use other options such as http.Ok ...
+	// return Response(200, ProductsProductIdGet200Response{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
+	// return Response(404, Error{}), nil
+
+	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
+	// return Response(401, Error{}), nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("ProductsProductIdGet method not implemented")
+}
+
+// ProductsProductIdRentPost - Rent a product
+func (s *UserAPIService) ProductsProductIdRentPost(ctx context.Context, productId string, rentProductFormular RentProductFormular) (ImplResponse, error) {
+	// TODO - update ProductsProductIdRentPost with the required logic for this service method.
+	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, RentProductConfirmation{}) or use other options such as http.Ok ...
+	// return Response(200, RentProductConfirmation{}), nil
+
+	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
+	// return Response(400, Error{}), nil
+
+	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
+	// return Response(401, Error{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
+	// return Response(404, Error{}), nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("ProductsProductIdRentPost method not implemented")
+}
+
 // ProfileGet - Get user profile
 func (s *UserAPIService) ProfileGet(ctx context.Context, r *http.Request) (ImplResponse, error) {
 	user, err := openapi_common.IsUserAuthorized(ctx, r)
@@ -109,4 +177,44 @@ func (s *UserAPIService) ProfileGet(ctx context.Context, r *http.Request) (ImplR
 	}
 	sanitized := database_user.SanitizeUserProfile(user)
 	return Response(200, sanitized), nil
+}
+
+// RentalsRentContractIdPickupPost - Confirm product pickup
+func (s *UserAPIService) RentalsRentContractIdPickupPost(ctx context.Context, rentContractId string, pickupConfirmation PickupConfirmation) (ImplResponse, error) {
+	// TODO - update RentalsRentContractIdPickupPost with the required logic for this service method.
+	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Success{}) or use other options such as http.Ok ...
+	// return Response(200, Success{}), nil
+
+	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
+	// return Response(400, Error{}), nil
+
+	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
+	// return Response(401, Error{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
+	// return Response(404, Error{}), nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("RentalsRentContractIdPickupPost method not implemented")
+}
+
+// RentalsRentContractIdReturnPost - Confirm product return
+func (s *UserAPIService) RentalsRentContractIdReturnPost(ctx context.Context, rentContractId string, returnProduct ReturnProduct) (ImplResponse, error) {
+	// TODO - update RentalsRentContractIdReturnPost with the required logic for this service method.
+	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Success{}) or use other options such as http.Ok ...
+	// return Response(200, Success{}), nil
+
+	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
+	// return Response(400, Error{}), nil
+
+	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
+	// return Response(401, Error{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
+	// return Response(404, Error{}), nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("RentalsRentContractIdReturnPost method not implemented")
 }

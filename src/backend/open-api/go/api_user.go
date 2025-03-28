@@ -16,6 +16,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 // UserAPIController binds http requests to an api service and writes the service results to the http response
@@ -61,15 +63,45 @@ func (c *UserAPIController) Routes() Routes {
 			"/change-password",
 			c.ChangePasswordPost,
 		},
+		"LocationLocationIdGet": Route{
+			strings.ToUpper("Get"),
+			"/location/{locationId}",
+			c.LocationLocationIdGet,
+		},
+		"LocationsGet": Route{
+			strings.ToUpper("Get"),
+			"/locations",
+			c.LocationsGet,
+		},
 		"PasswordResetPost": Route{
 			strings.ToUpper("Post"),
 			"/password-reset",
 			c.PasswordResetPost,
 		},
+		"ProductsProductIdGet": Route{
+			strings.ToUpper("Get"),
+			"/products/{productId}",
+			c.ProductsProductIdGet,
+		},
+		"ProductsProductIdRentPost": Route{
+			strings.ToUpper("Post"),
+			"/products/{productId}/rent",
+			c.ProductsProductIdRentPost,
+		},
 		"ProfileGet": Route{
 			strings.ToUpper("Get"),
 			"/profile",
 			c.ProfileGet,
+		},
+		"RentalsRentContractIdPickupPost": Route{
+			strings.ToUpper("Post"),
+			"/rentals/{rentContractId}/pickup",
+			c.RentalsRentContractIdPickupPost,
+		},
+		"RentalsRentContractIdReturnPost": Route{
+			strings.ToUpper("Post"),
+			"/rentals/{rentContractId}/return",
+			c.RentalsRentContractIdReturnPost,
 		},
 	}
 }
@@ -128,6 +160,36 @@ func (c *UserAPIController) ChangePasswordPost(w http.ResponseWriter, r *http.Re
 	EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
+// LocationLocationIdGet - Retrieve a single location
+func (c *UserAPIController) LocationLocationIdGet(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	locationIdParam := params["locationId"]
+	if locationIdParam == "" {
+		c.errorHandler(w, r, &RequiredError{"locationId"}, nil)
+		return
+	}
+	result, err := c.service.LocationLocationIdGet(r.Context(), locationIdParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// LocationsGet - Retrieve all locations
+func (c *UserAPIController) LocationsGet(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.LocationsGet(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
 // PasswordResetPost - Initiate password reset
 func (c *UserAPIController) PasswordResetPost(w http.ResponseWriter, r *http.Request) {
 	passwordResetParam := PasswordReset{}
@@ -155,9 +217,126 @@ func (c *UserAPIController) PasswordResetPost(w http.ResponseWriter, r *http.Req
 	EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
+// ProductsProductIdGet - Retrieve a single product
+func (c *UserAPIController) ProductsProductIdGet(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	productIdParam := params["productId"]
+	if productIdParam == "" {
+		c.errorHandler(w, r, &RequiredError{"productId"}, nil)
+		return
+	}
+	result, err := c.service.ProductsProductIdGet(r.Context(), productIdParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// ProductsProductIdRentPost - Rent a product
+func (c *UserAPIController) ProductsProductIdRentPost(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	productIdParam := params["productId"]
+	if productIdParam == "" {
+		c.errorHandler(w, r, &RequiredError{"productId"}, nil)
+		return
+	}
+	rentProductFormularParam := RentProductFormular{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&rentProductFormularParam); err != nil && !errors.Is(err, io.EOF) {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRentProductFormularRequired(rentProductFormularParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	if err := AssertRentProductFormularConstraints(rentProductFormularParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.ProductsProductIdRentPost(r.Context(), productIdParam, rentProductFormularParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
 // ProfileGet - Get user profile
 func (c *UserAPIController) ProfileGet(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.ProfileGet(r.Context(), r)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// RentalsRentContractIdPickupPost - Confirm product pickup
+func (c *UserAPIController) RentalsRentContractIdPickupPost(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	rentContractIdParam := params["rentContractId"]
+	if rentContractIdParam == "" {
+		c.errorHandler(w, r, &RequiredError{"rentContractId"}, nil)
+		return
+	}
+	pickupConfirmationParam := PickupConfirmation{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&pickupConfirmationParam); err != nil && !errors.Is(err, io.EOF) {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertPickupConfirmationRequired(pickupConfirmationParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	if err := AssertPickupConfirmationConstraints(pickupConfirmationParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.RentalsRentContractIdPickupPost(r.Context(), rentContractIdParam, pickupConfirmationParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// RentalsRentContractIdReturnPost - Confirm product return
+func (c *UserAPIController) RentalsRentContractIdReturnPost(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	rentContractIdParam := params["rentContractId"]
+	if rentContractIdParam == "" {
+		c.errorHandler(w, r, &RequiredError{"rentContractId"}, nil)
+		return
+	}
+	returnProductParam := ReturnProduct{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&returnProductParam); err != nil && !errors.Is(err, io.EOF) {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertReturnProductRequired(returnProductParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	if err := AssertReturnProductConstraints(returnProductParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.RentalsRentContractIdReturnPost(r.Context(), rentContractIdParam, returnProductParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
