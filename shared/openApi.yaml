@@ -128,6 +128,166 @@ paths:
           $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
+  /locations:
+    post:
+      tags:
+        - admin
+      summary: Create a new location
+      requestBody:
+        $ref: '#/components/requestBodies/Location'
+      responses:
+        '201':
+          $ref: '#/components/responses/Success'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+    get:
+      tags:
+        - admin
+        - user
+      summary: Retrieve all locations
+      responses:
+        '200':
+          $ref: '#/components/responses/LocationList'
+        '401':
+          $ref: '#/components/responses/Error'
+  /location/{locationId}:
+    get:
+      tags:
+        - admin
+        - user
+      summary: Retrieve a single location
+      parameters:
+        - name: locationId
+          in: path
+          required: true
+          description: The ID of the location to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Location'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /products:
+    post:
+      tags:
+        - admin
+      summary: Create a new product
+      requestBody:
+        $ref: '#/components/requestBodies/Product'
+      responses:
+        '201':
+          $ref: '#/components/responses/Product'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+    get:
+      tags:
+        - admin
+      summary: Retrieve all products
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductList'
+        '401':
+          $ref: '#/components/responses/Error'
+
+  /products/{productId}:
+    get:
+      tags:
+        - admin
+        - user
+      summary: Retrieve a single product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: The ID of the product to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductDetail'
+        '404':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+  /rentals/{rentContractId}/pickup:
+    post:
+      tags:
+        - user
+        - rental
+      summary: Confirm product pickup
+      parameters:
+        - name: rentContractId
+          in: path
+          required: true
+          description: The ID of the rent contract
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/PickupConfirmation'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /products/{productId}/rent:
+    post:
+      tags:
+        - user
+        - rental
+      summary: Rent a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: The ID of the product to rent
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/RentProductFormular'
+      responses:
+        '200':
+          $ref: '#/components/responses/RentProductResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /rentals/{rentContractId}/return:
+    post:
+      tags:
+        - user
+        - rental
+      summary: Confirm product return
+      parameters:
+        - name: rentContractId
+          in: path
+          required: true
+          description: The ID of the rent contract
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/ReturnProduct'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
 security:
   - bearerAuth: []
 components:
@@ -161,6 +321,48 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Health'
+    Location:
+      description: Location details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Location'
+    LocationList:
+      description: List of locations
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Location'
+    Product:
+      description: Product details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Product'
+    ProductList:
+      description: List of products
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Product'
+    ProductDetail:
+      description: Detailed product information
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Product'
+              - $ref: '#/components/schemas/ProductPublic'
+    RentProductResponse:
+      description: Product rented successfully
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RentProductConfirmation'
   requestBodies:
     UserRegistration:
       description: User registration
@@ -192,6 +394,36 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ChangeEmail'
+    Location:
+      description: Location details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Location'
+    Product:
+      description: Product details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Product'
+    RentProductFormular:
+      description: Rental formular
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RentProductFormular'
+    PickupConfirmation:
+      description: Pickup confirmation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PickupConfirmation'
+    ReturnProduct:
+      description: Return product
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReturnProduct'
   schemas:
     Success:
       type: object
@@ -299,3 +531,216 @@ components:
       required:
         - currentEmail
         - newEmail
+    Product:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the product
+        description:
+          type: string
+          description: Description of the product
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Unique identifier for the image
+              name:
+                type: string
+                description: Name of the image
+              data:
+                type: string
+                format: byte
+                description: Base64 encoded image data
+            required:
+              - id
+              - name
+              - data
+          description: List of base64 encoded image data with IDs and names
+        documents:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Unique identifier for the document
+              name:
+                type: string
+                description: Name of the document
+              data:
+                type: string
+                format: byte
+                description: Base64 encoded document data
+            required:
+              - id
+              - name
+              - data
+          description: List of base64 encoded document data with IDs and names
+        location:
+          type: string
+          description: Location ID of the product
+        pricing:
+          type: object
+          properties:
+            price:
+              type: number
+              format: float
+              description: Price of the product
+            deposit:
+              type: number
+              format: float
+              description: Deposit amount for the product
+          required:
+            - price
+          description: Pricing details including price and deposit
+        dynamicAttributes:
+          type: object
+          additionalProperties: true
+          description: Dynamic attributes for the product
+      required:
+        - name
+        - description
+        - pricing
+        - location
+    ProductPublic:
+      allOf:
+        - $ref: '#/components/schemas/Product'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: Unique identifier for the product
+            isRented:
+              type: boolean
+              description: Indicates whether the product is currently rented
+            isCurrentUserRenter:
+              type: boolean
+              description: Indicates whether the current user is the renter of the product
+            qrCodeUrl:
+              type: string
+              description: URL of the generated QR code
+            renterInfo:
+              type: object
+              properties:
+                rentalStartDate:
+                  type: string
+                  format: date
+                  description: Start date of the rental period
+                rentalEndDate:
+                  type: string
+                  format: date
+                  description: End date of the rental period
+                expectedDuration:
+                  type: string
+                  description: Expected duration of the rental
+              description: Information about the rental period
+    Location:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the location
+        city:
+          type: string
+          description: City where the product is located
+        street:
+          type: string
+          description: Street address of the product location
+        postalCode:
+          type: string
+          description: Postal code of the product location
+        buildingName:
+          type: string
+          description: Name of the building
+        coordinates:
+          type: object
+          properties:
+            latitude:
+              type: number
+              format: float
+              description: Latitude of the product location
+            longitude:
+              type: number
+              format: float
+              description: Longitude of the product location
+            notes:
+              type: string
+              description: Additional notes or annotations about the coordinates
+          description: Coordinates and notes for the product location
+    RentProductFormular:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: Unique identifier for the user renting the product
+        rentalStartDate:
+          type: string
+          format: date
+          description: The start date of the rental period
+        rentalEndDate:
+          type: string
+          format: date
+          description: The end date of the rental period
+        additionalNotes:
+          type: string
+          description: Free text for additional notes or special instructions
+        locationId:
+          type: string
+          description: Identifier for the location where the product will be picked up
+        paymentMethodId:
+          type: string
+          description: Identifier for the payment method used for the rental
+        dynamicAttributes:
+          type: object
+          additionalProperties: true
+          description: Dynamic attributes for the rental request
+      required:
+        - userId
+        - rentalStartDate
+        - rentalEndDate
+        - locationId
+        - paymentMethodId
+    RentProductConfirmation:
+      type: object
+      properties:
+        rentContractId:
+          type: string
+          description: Unique identifier for the rent contract
+    PickupConfirmation:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: Unique identifier for the user picking up the product
+        pickupImages:
+          type: array
+          items:
+            type: string
+            format: byte
+            description: Base64 encoded image data
+      required:
+        - userId
+        - pickupImages
+    ReturnProduct:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: Unique identifier for the user returning the product
+        returnImages:
+          type: array
+          items:
+            type: string
+            format: byte
+            description: Base64 encoded image data
+        additionalNotes:
+          type: string
+          description: Free text for additional notes or special instructions
+      required:
+        - userId
+        - returnImages
+        - additionalNotes
