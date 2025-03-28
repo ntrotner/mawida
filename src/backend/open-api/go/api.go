@@ -99,6 +99,6 @@ type UserAPIServicer interface {
 	ProductsProductIdGet(ctx context.Context, productId string, r *http.Request) (ImplResponse, error)
 	ProductsProductIdRentPost(context.Context, string, RentProductFormular, *http.Request) (ImplResponse, error)
 	ProfileGet(context.Context, *http.Request) (ImplResponse, error)
-	RentalsRentContractIdPickupPost(context.Context, string, PickupConfirmation) (ImplResponse, error)
-	RentalsRentContractIdReturnPost(context.Context, string, ReturnProduct) (ImplResponse, error)
+	RentalsRentContractIdPickupPost(context.Context, string, PickupConfirmation, *http.Request) (ImplResponse, error)
+	RentalsRentContractIdReturnPost(context.Context, string, ReturnProduct, *http.Request) (ImplResponse, error)
 }

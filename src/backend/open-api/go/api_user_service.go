@@ -357,41 +357,209 @@ func (s *UserAPIService) ProfileGet(ctx context.Context, r *http.Request) (ImplR
 }
 
 // RentalsRentContractIdPickupPost - Confirm product pickup
-func (s *UserAPIService) RentalsRentContractIdPickupPost(ctx context.Context, rentContractId string, pickupConfirmation PickupConfirmation) (ImplResponse, error) {
-	// TODO - update RentalsRentContractIdPickupPost with the required logic for this service method.
-	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+func (s *UserAPIService) RentalsRentContractIdPickupPost(ctx context.Context, rentContractId string, pickupConfirmation PickupConfirmation, r *http.Request) (ImplResponse, error) {
+	// Verify user authorization
+	user, err := openapi_common.IsUserAuthorized(ctx, r)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return Response(http.StatusUnauthorized, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. Please check your credentials.",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(200, Success{}) or use other options such as http.Ok ...
-	// return Response(200, Success{}), nil
+	// Get rent contract
+	contract := database_rent_contract.FindRentContractById(ctx, rentContractId)
+	if contract == nil {
+		return Response(http.StatusNotFound, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Rent contract not found",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
+	// Verify contract belongs to user
+	if contract.UserID != user.ID {
+		return Response(http.StatusForbidden, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. This contract belongs to another user.",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
+	// Verify contract status is Pending
+	if contract.Status != database_rent_contract.RentContractStatusPending {
+		return Response(http.StatusBadRequest, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Invalid contract status. Contract must be in Pending status.",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
+	// Update contract status to Active
+	contract.Status = database_rent_contract.RentContractStatusActive
+	if contract.DynamicAttributes == nil {
+		contract.DynamicAttributes = make(map[string]interface{})
+	}
+	contract.DynamicAttributes["pickupImages"] = pickupConfirmation.PickupImages
 
-	return Response(http.StatusNotImplemented, nil), errors.New("RentalsRentContractIdPickupPost method not implemented")
+	updatedContract := database_rent_contract.UpdateRentContract(ctx, contract)
+	if updatedContract == nil {
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to update rent contract",
+				},
+			},
+		}), nil
+	}
+
+	// Update product rental status
+	product := database_product.FindProductById(ctx, contract.ProductID)
+	if product == nil {
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to find product",
+				},
+			},
+		}), nil
+	}
+
+	product.RenterInfo.Status = string(database_rent_contract.RentContractStatusActive)
+	updatedProduct := database_product.UpdateProduct(ctx, product)
+	if updatedProduct == nil {
+		// Rollback contract status
+		contract.Status = database_rent_contract.RentContractStatusPending
+		database_rent_contract.UpdateRentContract(ctx, contract)
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to update product rental status",
+				},
+			},
+		}), nil
+	}
+
+	return Response(http.StatusOK, Success{}), nil
 }
 
 // RentalsRentContractIdReturnPost - Confirm product return
-func (s *UserAPIService) RentalsRentContractIdReturnPost(ctx context.Context, rentContractId string, returnProduct ReturnProduct) (ImplResponse, error) {
-	// TODO - update RentalsRentContractIdReturnPost with the required logic for this service method.
-	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+func (s *UserAPIService) RentalsRentContractIdReturnPost(ctx context.Context, rentContractId string, returnProduct ReturnProduct, r *http.Request) (ImplResponse, error) {
+	// Verify user authorization
+	user, err := openapi_common.IsUserAuthorized(ctx, r)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return Response(http.StatusUnauthorized, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. Please check your credentials.",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(200, Success{}) or use other options such as http.Ok ...
-	// return Response(200, Success{}), nil
+	// Get rent contract
+	contract := database_rent_contract.FindRentContractById(ctx, rentContractId)
+	if contract == nil {
+		return Response(http.StatusNotFound, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Rent contract not found",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
+	// Verify contract belongs to user
+	if contract.UserID != user.ID {
+		return Response(http.StatusForbidden, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. This contract belongs to another user.",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
+	// Verify contract status is Active
+	if contract.Status != database_rent_contract.RentContractStatusActive {
+		return Response(http.StatusBadRequest, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Invalid contract status. Contract must be in Active status.",
+				},
+			},
+		}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
+	// Update contract status to Completed
+	contract.Status = database_rent_contract.RentContractStatusCompleted
+	if contract.DynamicAttributes == nil {
+		contract.DynamicAttributes = make(map[string]interface{})
+	}
+	contract.DynamicAttributes["returnImages"] = returnProduct.ReturnImages
+	contract.DynamicAttributes["returnNotes"] = returnProduct.AdditionalNotes
 
-	return Response(http.StatusNotImplemented, nil), errors.New("RentalsRentContractIdReturnPost method not implemented")
+	updatedContract := database_rent_contract.UpdateRentContract(ctx, contract)
+	if updatedContract == nil {
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to update rent contract",
+				},
+			},
+		}), nil
+	}
+
+	// Update product rental status
+	product := database_product.FindProductById(ctx, contract.ProductID)
+	if product == nil {
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to find product",
+				},
+			},
+		}), nil
+	}
+
+	product.IsRented = false
+	product.RenterInfo = nil
+	updatedProduct := database_product.UpdateProduct(ctx, product)
+	if updatedProduct == nil {
+		// Rollback contract status
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to update product rental status",
+				},
+			},
+		}), nil
+	}
+
+	return Response(http.StatusOK, Success{}), nil
 }

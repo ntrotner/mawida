@@ -303,7 +303,7 @@ func (c *UserAPIController) RentalsRentContractIdPickupPost(w http.ResponseWrite
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.RentalsRentContractIdPickupPost(r.Context(), rentContractIdParam, pickupConfirmationParam)
+	result, err := c.service.RentalsRentContractIdPickupPost(r.Context(), rentContractIdParam, pickupConfirmationParam, r)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -336,7 +336,7 @@ func (c *UserAPIController) RentalsRentContractIdReturnPost(w http.ResponseWrite
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.RentalsRentContractIdReturnPost(r.Context(), rentContractIdParam, returnProductParam)
+	result, err := c.service.RentalsRentContractIdReturnPost(r.Context(), rentContractIdParam, returnProductParam, r)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
