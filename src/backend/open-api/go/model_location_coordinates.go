@@ -10,25 +10,36 @@
 
 package openapi
 
+import "template_backend/common"
+
 // LocationCoordinates - Coordinates and notes for the product location
 type LocationCoordinates struct {
 
 	// Latitude of the product location
-	Latitude float32 `json:"latitude,omitempty"`
+	Latitude float32 `json:"latitude,omitempty" validate:"required,gte=-90,lte=90"`
 
 	// Longitude of the product location
-	Longitude float32 `json:"longitude,omitempty"`
+	Longitude float32 `json:"longitude,omitempty" validate:"required,gte=-180,lte=180"`
 
 	// Additional notes or annotations about the coordinates
-	Notes string `json:"notes,omitempty"`
+	Notes string `json:"notes,omitempty" validate:"omitempty,max=500"`
 }
 
 // AssertLocationCoordinatesRequired checks if the required fields are not zero-ed
 func AssertLocationCoordinatesRequired(obj LocationCoordinates) error {
+	elements := map[string]interface{}{
+		"latitude":  obj.Latitude,
+		"longitude": obj.Longitude,
+	}
+	for name, el := range elements {
+		if isZero := IsZeroValue(el); isZero {
+			return &RequiredError{Field: name}
+		}
+	}
 	return nil
 }
 
 // AssertLocationCoordinatesConstraints checks if the values respects the defined constraints
 func AssertLocationCoordinatesConstraints(obj LocationCoordinates) error {
-	return nil
+	return common.Validate.Struct(obj)
 }

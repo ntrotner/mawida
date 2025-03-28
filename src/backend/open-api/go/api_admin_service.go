@@ -13,7 +13,11 @@ package openapi
 import (
 	"context"
 	"errors"
+	"github.com/rs/zerolog/log"
 	"net/http"
+	database_location "template_backend/database/paths/location"
+	database_user "template_backend/database/paths/user"
+	openapi_common "template_backend/open-api/common"
 )
 
 // AdminAPIService is a service that implements the logic for the AdminAPIServicer
@@ -27,52 +31,48 @@ func NewAdminAPIService() AdminAPIServicer {
 	return &AdminAPIService{}
 }
 
-// LocationLocationIdGet - Retrieve a single location
-func (s *AdminAPIService) LocationLocationIdGet(ctx context.Context, locationId string) (ImplResponse, error) {
-	// TODO - update LocationLocationIdGet with the required logic for this service method.
-	// Add api_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, Location{}) or use other options such as http.Ok ...
-	// return Response(200, Location{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("LocationLocationIdGet method not implemented")
-}
-
-// LocationsGet - Retrieve all locations
-func (s *AdminAPIService) LocationsGet(ctx context.Context) (ImplResponse, error) {
-	// TODO - update LocationsGet with the required logic for this service method.
-	// Add api_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, []Location{}) or use other options such as http.Ok ...
-	// return Response(200, []Location{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("LocationsGet method not implemented")
-}
-
 // LocationsPost - Create a new location
-func (s *AdminAPIService) LocationsPost(ctx context.Context, location Location) (ImplResponse, error) {
-	// TODO - update LocationsPost with the required logic for this service method.
-	// Add api_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+func (s *AdminAPIService) LocationsPost(ctx context.Context, location Location, r *http.Request) (ImplResponse, error) {
+	token, found := openapi_common.ReadTokenFromHeader(r)
+	if !found {
+		log.Error().Msg("Bearer format invalid")
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(201, Success{}) or use other options such as http.Ok ...
-	// return Response(201, Success{}), nil
+	_, content, err := database_user.VerifyJWT(&token)
+	if err != nil {
+		log.Error().Msg("Couldn't verify token")
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
+	user := database_user.FindUserById(ctx, &content.ID)
+	if user == nil {
+		log.Error().Str("id", content.ID).Msg("User not found")
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
+	if user.Roles != database_user.AdminUser {
+		log.Error().Str("id", content.ID).Msg("User is not an admin")
+		return Response(403, Error{ErrorMessages: []Message{{Code: "100", Message: "Forbidden. Admin access required."}}}), nil
+	}
 
-	return Response(http.StatusNotImplemented, nil), errors.New("LocationsPost method not implemented")
+	err = database_location.CreateLocation(
+		ctx,
+		location.Id,
+		location.City,
+		location.Street,
+		location.PostalCode,
+		location.BuildingName,
+		float64(location.Coordinates.Latitude),
+		float64(location.Coordinates.Longitude),
+		location.Coordinates.Notes,
+	)
+	if err != nil {
+		log.Error().Str("id", location.Id).Msg("Failed to create location")
+		return Response(500, Error{ErrorMessages: []Message{{Code: "500", Message: "Failed to create location"}}}), nil
+	}
+
+	return Response(201, Success{}), nil
 }
 
 // ProductsGet - Retrieve all products
@@ -104,21 +104,4 @@ func (s *AdminAPIService) ProductsPost(ctx context.Context, product Product) (Im
 	// return Response(401, Error{}), nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("ProductsPost method not implemented")
-}
-
-// ProductsProductIdGet - Retrieve a single product
-func (s *AdminAPIService) ProductsProductIdGet(ctx context.Context, productId string) (ImplResponse, error) {
-	// TODO - update ProductsProductIdGet with the required logic for this service method.
-	// Add api_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, ProductsProductIdGet200Response{}) or use other options such as http.Ok ...
-	// return Response(200, ProductsProductIdGet200Response{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("ProductsProductIdGet method not implemented")
 }

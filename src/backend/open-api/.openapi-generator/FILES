@@ -5,8 +5,6 @@ go/api_admin.go
 go/api_admin_service.go
 go/api_authentication.go
 go/api_authentication_service.go
-go/api_rental.go
-go/api_rental_service.go
 go/api_status.go
 go/api_status_service.go
 go/api_user.go

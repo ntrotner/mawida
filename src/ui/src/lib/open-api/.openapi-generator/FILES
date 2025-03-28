@@ -1,6 +1,5 @@
 apis/AdminApi.ts
 apis/AuthenticationApi.ts
-apis/RentalApi.ts
 apis/StatusApi.ts
 apis/UserApi.ts
 apis/index.ts

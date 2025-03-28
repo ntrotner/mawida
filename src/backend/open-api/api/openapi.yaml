@@ -241,7 +241,6 @@ paths:
           description: Error messages
       summary: Retrieve all locations
       tags:
-      - admin
       - user
     post:
       requestBody:
@@ -300,7 +299,6 @@ paths:
           description: Error messages
       summary: Retrieve a single location
       tags:
-      - admin
       - user
   /products:
     get:
@@ -379,7 +377,6 @@ paths:
           description: Error messages
       summary: Retrieve a single product
       tags:
-      - admin
       - user
   /rentals/{rentContractId}/pickup:
     post:
@@ -422,7 +419,6 @@ paths:
       summary: Confirm product pickup
       tags:
       - user
-      - rental
   /products/{productId}/rent:
     post:
       parameters:
@@ -464,7 +460,6 @@ paths:
       summary: Rent a product
       tags:
       - user
-      - rental
   /rentals/{rentContractId}/return:
     post:
       parameters:
@@ -506,7 +501,6 @@ paths:
       summary: Confirm product return
       tags:
       - user
-      - rental
 components:
   requestBodies:
     UserRegistration:

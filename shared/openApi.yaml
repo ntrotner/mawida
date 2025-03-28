@@ -144,7 +144,6 @@ paths:
           $ref: '#/components/responses/Error'
     get:
       tags:
-        - admin
         - user
       summary: Retrieve all locations
       responses:
@@ -155,7 +154,6 @@ paths:
   /location/{locationId}:
     get:
       tags:
-        - admin
         - user
       summary: Retrieve a single location
       parameters:
@@ -199,7 +197,6 @@ paths:
   /products/{productId}:
     get:
       tags:
-        - admin
         - user
       summary: Retrieve a single product
       parameters:
@@ -220,7 +217,6 @@ paths:
     post:
       tags:
         - user
-        - rental
       summary: Confirm product pickup
       parameters:
         - name: rentContractId
@@ -244,7 +240,6 @@ paths:
     post:
       tags:
         - user
-        - rental
       summary: Rent a product
       parameters:
         - name: productId
@@ -268,7 +263,6 @@ paths:
     post:
       tags:
         - user
-        - rental
       summary: Confirm product return
       parameters:
         - name: rentContractId

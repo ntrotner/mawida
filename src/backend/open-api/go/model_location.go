@@ -10,28 +10,43 @@
 
 package openapi
 
+import "template_backend/common"
+
 type Location struct {
 
 	// Unique identifier for the location
 	Id string `json:"id,omitempty"`
 
 	// City where the product is located
-	City string `json:"city,omitempty"`
+	City string `json:"city,omitempty" validate:"required,min=2,max=100"`
 
 	// Street address of the product location
-	Street string `json:"street,omitempty"`
+	Street string `json:"street,omitempty" validate:"required,min=2,max=200"`
 
 	// Postal code of the product location
-	PostalCode string `json:"postalCode,omitempty"`
+	PostalCode string `json:"postalCode,omitempty" validate:"required,min=4,max=10"`
 
 	// Name of the building
-	BuildingName string `json:"buildingName,omitempty"`
+	BuildingName string `json:"buildingName,omitempty" validate:"omitempty,min=2,max=100"`
 
-	Coordinates LocationCoordinates `json:"coordinates,omitempty"`
+	Coordinates LocationCoordinates `json:"coordinates,omitempty" validate:"required"`
 }
 
 // AssertLocationRequired checks if the required fields are not zero-ed
 func AssertLocationRequired(obj Location) error {
+	elements := map[string]interface{}{
+		"id":          obj.Id,
+		"city":        obj.City,
+		"street":      obj.Street,
+		"postalCode":  obj.PostalCode,
+		"coordinates": obj.Coordinates,
+	}
+	for name, el := range elements {
+		if isZero := IsZeroValue(el); isZero {
+			return &RequiredError{Field: name}
+		}
+	}
+
 	if err := AssertLocationCoordinatesRequired(obj.Coordinates); err != nil {
 		return err
 	}
@@ -40,5 +55,5 @@ func AssertLocationRequired(obj Location) error {
 
 // AssertLocationConstraints checks if the values respects the defined constraints
 func AssertLocationConstraints(obj Location) error {
-	return nil
+	return common.Validate.Struct(obj)
 }

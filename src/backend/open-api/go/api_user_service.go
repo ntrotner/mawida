@@ -14,6 +14,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	database_location "template_backend/database/paths/location"
 	database_user "template_backend/database/paths/user"
 	openapi_common "template_backend/open-api/common"
 
@@ -85,33 +86,55 @@ func (s *UserAPIService) ChangePasswordPost(ctx context.Context, changePassword 
 
 // LocationLocationIdGet - Retrieve a single location
 func (s *UserAPIService) LocationLocationIdGet(ctx context.Context, locationId string) (ImplResponse, error) {
-	// TODO - update LocationLocationIdGet with the required logic for this service method.
-	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+	location := database_location.FindLocationById(ctx, locationId)
+	if location == nil {
+		log.Error().Str("id", locationId).Msg("Location not found")
+		return Response(404, Error{ErrorMessages: []Message{{Code: "404", Message: "Location not found"}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(200, Location{}) or use other options such as http.Ok ...
-	// return Response(200, Location{}), nil
+	// reformat location to comply with the openapi schema
+	formattedLocation := Location{
+		Id:           location.ID,
+		City:         location.City,
+		Street:       location.Street,
+		PostalCode:   location.PostalCode,
+		BuildingName: location.BuildingName,
+		Coordinates: LocationCoordinates{
+			Longitude: float32(location.Longitude),
+			Latitude:  float32(location.Latitude),
+			Notes:     location.Notes,
+		},
+	}
 
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("LocationLocationIdGet method not implemented")
+	return Response(200, formattedLocation), nil
 }
 
 // LocationsGet - Retrieve all locations
 func (s *UserAPIService) LocationsGet(ctx context.Context) (ImplResponse, error) {
-	// TODO - update LocationsGet with the required logic for this service method.
-	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+	locations := database_location.GetAllLocations(ctx)
+	if locations == nil {
+		log.Error().Msg("Failed to retrieve locations")
+		return Response(500, Error{ErrorMessages: []Message{{Code: "500", Message: "Internal server error"}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(200, []Location{}) or use other options such as http.Ok ...
-	// return Response(200, []Location{}), nil
+	// reformat locations to comply with the openapi schema
+	formattedLocations := make([]Location, len(locations))
+	for i, location := range locations {
+		formattedLocations[i] = Location{
+			Id:           location.ID,
+			City:         location.City,
+			Street:       location.Street,
+			PostalCode:   location.PostalCode,
+			BuildingName: location.BuildingName,
+			Coordinates: LocationCoordinates{
+				Longitude: float32(location.Longitude),
+				Latitude:  float32(location.Latitude),
+				Notes:     location.Notes,
+			},
+		}
+	}
 
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("LocationsGet method not implemented")
+	return Response(200, formattedLocations), nil
 }
 
 // PasswordResetPost - Initiate password reset

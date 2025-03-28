@@ -17,7 +17,6 @@ import * as runtime from '../runtime';
 import type {
   Location,
   Product,
-  ProductsProductIdGet200Response,
   Success,
 } from '../models/index';
 import {
@@ -25,15 +24,9 @@ import {
     LocationToJSON,
     ProductFromJSON,
     ProductToJSON,
-    ProductsProductIdGet200ResponseFromJSON,
-    ProductsProductIdGet200ResponseToJSON,
     SuccessFromJSON,
     SuccessToJSON,
 } from '../models/index';
-
-export interface LocationLocationIdGetRequest {
-    locationId: string;
-}
 
 export interface LocationsPostRequest {
     location?: Location;
@@ -43,86 +36,10 @@ export interface ProductsPostRequest {
     product?: Product;
 }
 
-export interface ProductsProductIdGetRequest {
-    productId: string;
-}
-
 /**
  * 
  */
 export class AdminApi extends runtime.BaseAPI {
-
-    /**
-     * Retrieve a single location
-     */
-    async locationLocationIdGetRaw(requestParameters: LocationLocationIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Location>> {
-        if (requestParameters.locationId === null || requestParameters.locationId === undefined) {
-            throw new runtime.RequiredError('locationId','Required parameter requestParameters.locationId was null or undefined when calling locationLocationIdGet.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/location/{locationId}`.replace(`{${"locationId"}}`, encodeURIComponent(String(requestParameters.locationId))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => LocationFromJSON(jsonValue));
-    }
-
-    /**
-     * Retrieve a single location
-     */
-    async locationLocationIdGet(requestParameters: LocationLocationIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Location> {
-        const response = await this.locationLocationIdGetRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Retrieve all locations
-     */
-    async locationsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Location>>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/locations`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(LocationFromJSON));
-    }
-
-    /**
-     * Retrieve all locations
-     */
-    async locationsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Location>> {
-        const response = await this.locationsGetRaw(initOverrides);
-        return await response.value();
-    }
 
     /**
      * Create a new location
@@ -229,44 +146,6 @@ export class AdminApi extends runtime.BaseAPI {
      */
     async productsPost(requestParameters: ProductsPostRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Product> {
         const response = await this.productsPostRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Retrieve a single product
-     */
-    async productsProductIdGetRaw(requestParameters: ProductsProductIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ProductsProductIdGet200Response>> {
-        if (requestParameters.productId === null || requestParameters.productId === undefined) {
-            throw new runtime.RequiredError('productId','Required parameter requestParameters.productId was null or undefined when calling productsProductIdGet.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/products/{productId}`.replace(`{${"productId"}}`, encodeURIComponent(String(requestParameters.productId))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => ProductsProductIdGet200ResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Retrieve a single product
-     */
-    async productsProductIdGet(requestParameters: ProductsProductIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ProductsProductIdGet200Response> {
-        const response = await this.productsProductIdGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

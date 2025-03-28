@@ -16,8 +16,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
-	"github.com/gorilla/mux"
 )
 
 // AdminAPIController binds http requests to an api service and writes the service results to the http response
@@ -53,16 +51,6 @@ func NewAdminAPIController(s AdminAPIServicer, opts ...AdminAPIOption) Router {
 // Routes returns all the api routes for the AdminAPIController
 func (c *AdminAPIController) Routes() Routes {
 	return Routes{
-		"LocationLocationIdGet": Route{
-			strings.ToUpper("Get"),
-			"/location/{locationId}",
-			c.LocationLocationIdGet,
-		},
-		"LocationsGet": Route{
-			strings.ToUpper("Get"),
-			"/locations",
-			c.LocationsGet,
-		},
 		"LocationsPost": Route{
 			strings.ToUpper("Post"),
 			"/locations",
@@ -78,42 +66,7 @@ func (c *AdminAPIController) Routes() Routes {
 			"/products",
 			c.ProductsPost,
 		},
-		"ProductsProductIdGet": Route{
-			strings.ToUpper("Get"),
-			"/products/{productId}",
-			c.ProductsProductIdGet,
-		},
 	}
-}
-
-// LocationLocationIdGet - Retrieve a single location
-func (c *AdminAPIController) LocationLocationIdGet(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	locationIdParam := params["locationId"]
-	if locationIdParam == "" {
-		c.errorHandler(w, r, &RequiredError{"locationId"}, nil)
-		return
-	}
-	result, err := c.service.LocationLocationIdGet(r.Context(), locationIdParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-}
-
-// LocationsGet - Retrieve all locations
-func (c *AdminAPIController) LocationsGet(w http.ResponseWriter, r *http.Request) {
-	result, err := c.service.LocationsGet(r.Context())
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 // LocationsPost - Create a new location
@@ -133,7 +86,7 @@ func (c *AdminAPIController) LocationsPost(w http.ResponseWriter, r *http.Reques
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.LocationsPost(r.Context(), locationParam)
+	result, err := c.service.LocationsPost(r.Context(), locationParam, r)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -173,24 +126,6 @@ func (c *AdminAPIController) ProductsPost(w http.ResponseWriter, r *http.Request
 		return
 	}
 	result, err := c.service.ProductsPost(r.Context(), productParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-}
-
-// ProductsProductIdGet - Retrieve a single product
-func (c *AdminAPIController) ProductsProductIdGet(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	productIdParam := params["productId"]
-	if productIdParam == "" {
-		c.errorHandler(w, r, &RequiredError{"productId"}, nil)
-		return
-	}
-	result, err := c.service.ProductsProductIdGet(r.Context(), productIdParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

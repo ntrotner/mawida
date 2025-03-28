@@ -9,6 +9,9 @@ import (
 )
 
 func SetupHttp() {
+	AdminAPIService := openapi.NewAdminAPIService()
+	AdminAPIController := openapi.NewAdminAPIController(AdminAPIService)
+
 	AuthenticationAPIService := openapi.NewAuthenticationAPIService()
 	AuthenticationAPIController := openapi.NewAuthenticationAPIController(AuthenticationAPIService)
 
@@ -20,6 +23,7 @@ func SetupHttp() {
 
 	router := openapi.NewRouter(
 		AuthenticationAPIController,
+		AdminAPIController,
 		StatusAPIController,
 		UserAPIController,
 	)

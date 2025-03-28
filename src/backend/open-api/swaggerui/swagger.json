@@ -230,7 +230,6 @@
       },
       "get": {
         "tags": [
-          "admin",
           "user"
         ],
         "summary": "Retrieve all locations",
@@ -247,7 +246,6 @@
     "/location/{locationId}": {
       "get": {
         "tags": [
-          "admin",
           "user"
         ],
         "summary": "Retrieve a single location",
@@ -314,7 +312,6 @@
     "/products/{productId}": {
       "get": {
         "tags": [
-          "admin",
           "user"
         ],
         "summary": "Retrieve a single product",
@@ -345,8 +342,7 @@
     "/rentals/{rentContractId}/pickup": {
       "post": {
         "tags": [
-          "user",
-          "rental"
+          "user"
         ],
         "summary": "Confirm product pickup",
         "parameters": [
@@ -382,8 +378,7 @@
     "/products/{productId}/rent": {
       "post": {
         "tags": [
-          "user",
-          "rental"
+          "user"
         ],
         "summary": "Rent a product",
         "parameters": [
@@ -419,8 +414,7 @@
     "/rentals/{rentContractId}/return": {
       "post": {
         "tags": [
-          "user",
-          "rental"
+          "user"
         ],
         "summary": "Confirm product return",
         "parameters": [
