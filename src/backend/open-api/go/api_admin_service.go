@@ -12,12 +12,13 @@ package openapi
 
 import (
 	"context"
-	"errors"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	database_location "template_backend/database/paths/location"
+	database_product "template_backend/database/paths/product"
 	database_user "template_backend/database/paths/user"
 	openapi_common "template_backend/open-api/common"
+
+	"github.com/rs/zerolog/log"
 )
 
 // AdminAPIService is a service that implements the logic for the AdminAPIServicer
@@ -76,32 +77,131 @@ func (s *AdminAPIService) LocationsPost(ctx context.Context, location Location, 
 }
 
 // ProductsGet - Retrieve all products
-func (s *AdminAPIService) ProductsGet(ctx context.Context) (ImplResponse, error) {
-	// TODO - update ProductsGet with the required logic for this service method.
-	// Add api_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+func (s *AdminAPIService) ProductsGet(ctx context.Context, r *http.Request) (ImplResponse, error) {
+	// if not authenticated then a sanitized version is send
+	token, found := openapi_common.ReadTokenFromHeader(r)
+	sanitizedProducts := []database_product.Product{}
+	if !found {
+		sanitizedProducts = database_product.GetAllProducts(ctx)
+		for i := range sanitizedProducts {
+			sanitizedProducts[i].DynamicAttributes = nil
+			sanitizedProducts[i].RenterInfo = nil
+		}
+		return Response(200, sanitizedProducts), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(200, []Product{}) or use other options such as http.Ok ...
-	// return Response(200, []Product{}), nil
+	_, content, err := database_user.VerifyJWT(&token)
+	if err != nil {
+		log.Error().Msg("Couldn't verify token")
+		return Response(200, sanitizedProducts), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
+	user := database_user.FindUserById(ctx, &content.ID)
+	if user == nil {
+		log.Error().Str("id", content.ID).Msg("User not found")
+		return Response(200, sanitizedProducts), nil
+	}
 
-	return Response(http.StatusNotImplemented, nil), errors.New("ProductsGet method not implemented")
+	if user.Roles != database_user.AdminUser {
+		log.Error().Str("id", content.ID).Msg("User is not an admin")
+		return Response(200, sanitizedProducts), nil
+	}
+
+	products := database_product.GetAllProducts(ctx)
+	return Response(200, products), nil
 }
 
 // ProductsPost - Create a new product
-func (s *AdminAPIService) ProductsPost(ctx context.Context, product Product) (ImplResponse, error) {
-	// TODO - update ProductsPost with the required logic for this service method.
-	// Add api_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+func (s *AdminAPIService) ProductsPost(ctx context.Context, product Product, r *http.Request) (ImplResponse, error) {
+	token, found := openapi_common.ReadTokenFromHeader(r)
+	if !found {
+		log.Error().Msg("Bearer format invalid")
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(201, Product{}) or use other options such as http.Ok ...
-	// return Response(201, Product{}), nil
+	_, content, err := database_user.VerifyJWT(&token)
+	if err != nil {
+		log.Error().Msg("Couldn't verify token")
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
+	user := database_user.FindUserById(ctx, &content.ID)
+	if user == nil {
+		log.Error().Str("id", content.ID).Msg("User not found")
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
+	if user.Roles != database_user.AdminUser {
+		log.Error().Str("id", content.ID).Msg("User is not an admin")
+		return Response(403, Error{ErrorMessages: []Message{{Code: "100", Message: "Forbidden. Admin access required."}}}), nil
+	}
 
-	return Response(http.StatusNotImplemented, nil), errors.New("ProductsPost method not implemented")
+	// Convert OpenAPI model to database model
+	images := make([]database_product.ProductImage, len(product.Images))
+	for i, img := range product.Images {
+		images[i] = database_product.ProductImage{
+			ID:   img.Id,
+			Name: img.Name,
+			Data: img.Data,
+		}
+	}
+
+	documents := make([]database_product.ProductDocument, len(product.Documents))
+	for i, doc := range product.Documents {
+		documents[i] = database_product.ProductDocument{
+			ID:   doc.Id,
+			Name: doc.Name,
+			Data: doc.Data,
+		}
+	}
+
+	pricing := database_product.ProductPricing{
+		Price:   product.Pricing.Price,
+		Deposit: product.Pricing.Deposit,
+	}
+
+	dbProduct := database_product.CreateProduct(
+		ctx,
+		product.Name,
+		product.Description,
+		product.Location,
+		pricing,
+		images,
+		documents,
+		product.DynamicAttributes,
+	)
+	if dbProduct == nil {
+		log.Error().Err(err).Msg("Failed to create product")
+		return Response(500, Error{ErrorMessages: []Message{{Code: "500", Message: "Failed to create product"}}}), nil
+	}
+
+	// Convert database model back to OpenAPI model for response
+	response := Product{
+		ID:                dbProduct.ID,
+		Name:              dbProduct.Name,
+		Description:       dbProduct.Description,
+		Location:          dbProduct.Location,
+		Pricing:           ProductPricing{Price: dbProduct.Pricing.Price, Deposit: dbProduct.Pricing.Deposit},
+		DynamicAttributes: dbProduct.DynamicAttributes,
+	}
+
+	response.Images = make([]ProductImagesInner, len(dbProduct.Images))
+	for i, img := range dbProduct.Images {
+		response.Images[i] = ProductImagesInner{
+			Id:   img.ID,
+			Name: img.Name,
+			Data: img.Data,
+		}
+	}
+
+	response.Documents = make([]ProductDocumentsInner, len(dbProduct.Documents))
+	for i, doc := range dbProduct.Documents {
+		response.Documents[i] = ProductDocumentsInner{
+			Id:   doc.ID,
+			Name: doc.Name,
+			Data: doc.Data,
+		}
+	}
+
+	return Response(201, response), nil
 }

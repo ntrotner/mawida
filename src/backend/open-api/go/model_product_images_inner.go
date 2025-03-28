@@ -10,16 +10,18 @@
 
 package openapi
 
+import "template_backend/common"
+
 type ProductImagesInner struct {
 
 	// Unique identifier for the image
 	Id string `json:"id"`
 
 	// Name of the image
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,min=2,max=100"`
 
 	// Base64 encoded image data
-	Data string `json:"data"`
+	Data string `json:"data" validate:"required,base64"`
 }
 
 // AssertProductImagesInnerRequired checks if the required fields are not zero-ed
@@ -40,5 +42,5 @@ func AssertProductImagesInnerRequired(obj ProductImagesInner) error {
 
 // AssertProductImagesInnerConstraints checks if the values respects the defined constraints
 func AssertProductImagesInnerConstraints(obj ProductImagesInner) error {
-	return nil
+	return common.Validate.Struct(obj)
 }

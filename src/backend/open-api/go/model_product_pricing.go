@@ -10,14 +10,16 @@
 
 package openapi
 
+import "template_backend/common"
+
 // ProductPricing - Pricing details including price and deposit
 type ProductPricing struct {
 
 	// Price of the product
-	Price float32 `json:"price"`
+	Price float32 `json:"price" validate:"required,gte=0"`
 
 	// Deposit amount for the product
-	Deposit float32 `json:"deposit,omitempty"`
+	Deposit float32 `json:"deposit,omitempty" validate:"omitempty,gte=0"`
 }
 
 // AssertProductPricingRequired checks if the required fields are not zero-ed
@@ -36,5 +38,5 @@ func AssertProductPricingRequired(obj ProductPricing) error {
 
 // AssertProductPricingConstraints checks if the values respects the defined constraints
 func AssertProductPricingConstraints(obj ProductPricing) error {
-	return nil
+	return common.Validate.Struct(obj)
 }

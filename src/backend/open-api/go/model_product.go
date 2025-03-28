@@ -10,27 +10,31 @@
 
 package openapi
 
+import "template_backend/common"
+
 type Product struct {
+	// ID of the product
+	ID string `json:"id"`
 
 	// Name of the product
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,min=2,max=100"`
 
 	// Description of the product
-	Description string `json:"description"`
+	Description string `json:"description" validate:"required,min=10,max=1000"`
 
 	// List of base64 encoded image data with IDs and names
-	Images []ProductImagesInner `json:"images,omitempty"`
+	Images []ProductImagesInner `json:"images,omitempty" validate:"omitempty,dive"`
 
 	// List of base64 encoded document data with IDs and names
-	Documents []ProductDocumentsInner `json:"documents,omitempty"`
+	Documents []ProductDocumentsInner `json:"documents,omitempty" validate:"omitempty,dive"`
 
 	// Location ID of the product
-	Location string `json:"location"`
+	Location string `json:"location" validate:"required,uuid"`
 
-	Pricing ProductPricing `json:"pricing"`
+	Pricing ProductPricing `json:"pricing" validate:"required"`
 
 	// Dynamic attributes for the product
-	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty"`
+	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty" validate:"omitempty"`
 }
 
 // AssertProductRequired checks if the required fields are not zero-ed
@@ -65,5 +69,5 @@ func AssertProductRequired(obj Product) error {
 
 // AssertProductConstraints checks if the values respects the defined constraints
 func AssertProductConstraints(obj Product) error {
-	return nil
+	return common.Validate.Struct(obj)
 }

@@ -15,6 +15,7 @@ import (
 	"errors"
 	"net/http"
 	database_location "template_backend/database/paths/location"
+	database_product "template_backend/database/paths/product"
 	database_user "template_backend/database/paths/user"
 	openapi_common "template_backend/open-api/common"
 
@@ -155,20 +156,36 @@ func (s *UserAPIService) PasswordResetPost(ctx context.Context, passwordReset Pa
 }
 
 // ProductsProductIdGet - Retrieve a single product
-func (s *UserAPIService) ProductsProductIdGet(ctx context.Context, productId string) (ImplResponse, error) {
-	// TODO - update ProductsProductIdGet with the required logic for this service method.
-	// Add api_user_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+func (s *UserAPIService) ProductsProductIdGet(ctx context.Context, productId string, r *http.Request) (ImplResponse, error) {
+	// if not authenticated then a sanitized version is send
+	token, found := openapi_common.ReadTokenFromHeader(r)
+	sanitizedProduct := database_product.Product{}
+	if !found {
+		sanitizedProduct = *database_product.FindProductById(ctx, productId)
+		sanitizedProduct.DynamicAttributes = nil
+		sanitizedProduct.RenterInfo = nil
+		return Response(200, sanitizedProduct), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(200, ProductsProductIdGet200Response{}) or use other options such as http.Ok ...
-	// return Response(200, ProductsProductIdGet200Response{}), nil
+	_, content, err := database_user.VerifyJWT(&token)
+	if err != nil {
+		log.Error().Msg("Couldn't verify token")
+		return Response(200, sanitizedProduct), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
+	user := database_user.FindUserById(ctx, &content.ID)
+	if user == nil {
+		log.Error().Str("id", content.ID).Msg("User not found")
+		return Response(200, sanitizedProduct), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
+	if user.Roles != database_user.AdminUser {
+		log.Error().Str("id", content.ID).Msg("User is not an admin")
+		return Response(200, sanitizedProduct), nil
+	}
 
-	return Response(http.StatusNotImplemented, nil), errors.New("ProductsProductIdGet method not implemented")
+	product := database_product.FindProductById(ctx, productId)
+	return Response(200, product), nil
 }
 
 // ProductsProductIdRentPost - Rent a product

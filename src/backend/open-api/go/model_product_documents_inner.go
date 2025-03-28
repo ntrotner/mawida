@@ -10,16 +10,18 @@
 
 package openapi
 
+import "template_backend/common"
+
 type ProductDocumentsInner struct {
 
 	// Unique identifier for the document
 	Id string `json:"id"`
 
 	// Name of the document
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,min=2,max=100"`
 
 	// Base64 encoded document data
-	Data string `json:"data"`
+	Data string `json:"data" validate:"required,base64"`
 }
 
 // AssertProductDocumentsInnerRequired checks if the required fields are not zero-ed
@@ -40,5 +42,5 @@ func AssertProductDocumentsInnerRequired(obj ProductDocumentsInner) error {
 
 // AssertProductDocumentsInnerConstraints checks if the values respects the defined constraints
 func AssertProductDocumentsInnerConstraints(obj ProductDocumentsInner) error {
-	return nil
+	return common.Validate.Struct(obj)
 }

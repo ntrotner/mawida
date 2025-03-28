@@ -63,8 +63,8 @@ type UserAPIRouter interface {
 // and updated with the logic required for the API.
 type AdminAPIServicer interface {
 	LocationsPost(context.Context, Location, *http.Request) (ImplResponse, error)
-	ProductsGet(context.Context) (ImplResponse, error)
-	ProductsPost(context.Context, Product) (ImplResponse, error)
+	ProductsGet(context.Context, *http.Request) (ImplResponse, error)
+	ProductsPost(context.Context, Product, *http.Request) (ImplResponse, error)
 }
 
 // AuthenticationAPIServicer defines the api actions for the AuthenticationAPI service
@@ -96,7 +96,7 @@ type UserAPIServicer interface {
 	LocationLocationIdGet(context.Context, string) (ImplResponse, error)
 	LocationsGet(context.Context) (ImplResponse, error)
 	PasswordResetPost(context.Context, PasswordReset) (ImplResponse, error)
-	ProductsProductIdGet(context.Context, string) (ImplResponse, error)
+	ProductsProductIdGet(ctx context.Context, productId string, r *http.Request) (ImplResponse, error)
 	ProductsProductIdRentPost(context.Context, string, RentProductFormular) (ImplResponse, error)
 	ProfileGet(context.Context, *http.Request) (ImplResponse, error)
 	RentalsRentContractIdPickupPost(context.Context, string, PickupConfirmation) (ImplResponse, error)

@@ -225,7 +225,7 @@ func (c *UserAPIController) ProductsProductIdGet(w http.ResponseWriter, r *http.
 		c.errorHandler(w, r, &RequiredError{"productId"}, nil)
 		return
 	}
-	result, err := c.service.ProductsProductIdGet(r.Context(), productIdParam)
+	result, err := c.service.ProductsProductIdGet(r.Context(), productIdParam, r)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

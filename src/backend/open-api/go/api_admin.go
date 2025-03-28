@@ -98,7 +98,7 @@ func (c *AdminAPIController) LocationsPost(w http.ResponseWriter, r *http.Reques
 
 // ProductsGet - Retrieve all products
 func (c *AdminAPIController) ProductsGet(w http.ResponseWriter, r *http.Request) {
-	result, err := c.service.ProductsGet(r.Context())
+	result, err := c.service.ProductsGet(r.Context(), r)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -125,7 +125,7 @@ func (c *AdminAPIController) ProductsPost(w http.ResponseWriter, r *http.Request
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.ProductsPost(r.Context(), productParam)
+	result, err := c.service.ProductsPost(r.Context(), productParam, r)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
