@@ -14,8 +14,13 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	database_location "template_backend/database/paths/location"
+	database_product "template_backend/database/paths/product"
+	database_rent_contract "template_backend/database/paths/rent_contract"
 	database_user "template_backend/database/paths/user"
 	openapi_common "template_backend/open-api/common"
+
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -83,6 +88,59 @@ func (s *UserAPIService) ChangePasswordPost(ctx context.Context, changePassword 
 	return Response(200, Success{}), nil
 }
 
+// LocationLocationIdGet - Retrieve a single location
+func (s *UserAPIService) LocationLocationIdGet(ctx context.Context, locationId string) (ImplResponse, error) {
+	location := database_location.FindLocationById(ctx, locationId)
+	if location == nil {
+		log.Error().Str("id", locationId).Msg("Location not found")
+		return Response(404, Error{ErrorMessages: []Message{{Code: "404", Message: "Location not found"}}}), nil
+	}
+
+	// reformat location to comply with the openapi schema
+	formattedLocation := Location{
+		Id:           location.ID,
+		City:         location.City,
+		Street:       location.Street,
+		PostalCode:   location.PostalCode,
+		BuildingName: location.BuildingName,
+		Coordinates: LocationCoordinates{
+			Longitude: float32(location.Longitude),
+			Latitude:  float32(location.Latitude),
+		},
+		Notes: location.Notes,
+	}
+
+	return Response(200, formattedLocation), nil
+}
+
+// LocationsGet - Retrieve all locations
+func (s *UserAPIService) LocationsGet(ctx context.Context) (ImplResponse, error) {
+	locations := database_location.GetAllLocations(ctx)
+	if locations == nil {
+		log.Error().Msg("Failed to retrieve locations")
+		return Response(500, Error{ErrorMessages: []Message{{Code: "500", Message: "Internal server error"}}}), nil
+	}
+
+	// reformat locations to comply with the openapi schema
+	formattedLocations := make([]Location, len(locations))
+	for i, location := range locations {
+		formattedLocations[i] = Location{
+			Id:           location.ID,
+			City:         location.City,
+			Street:       location.Street,
+			PostalCode:   location.PostalCode,
+			BuildingName: location.BuildingName,
+			Coordinates: LocationCoordinates{
+				Longitude: float32(location.Longitude),
+				Latitude:  float32(location.Latitude),
+			},
+			Notes: location.Notes,
+		}
+	}
+
+	return Response(200, formattedLocations), nil
+}
+
 // PasswordResetPost - Initiate password reset
 func (s *UserAPIService) PasswordResetPost(ctx context.Context, passwordReset PasswordReset) (ImplResponse, error) {
 	// TODO - update PasswordResetPost with the required logic for this service method.
@@ -100,6 +158,191 @@ func (s *UserAPIService) PasswordResetPost(ctx context.Context, passwordReset Pa
 	return Response(http.StatusNotImplemented, nil), errors.New("PasswordResetPost method not implemented")
 }
 
+// ProductsProductIdGet - Retrieve a single product
+func (s *UserAPIService) ProductsProductIdGet(ctx context.Context, productId string, r *http.Request) (ImplResponse, error) {
+	// if not authenticated then a sanitized version is send
+	token, found := openapi_common.ReadTokenFromHeader(r)
+	if !found {
+		sanitizedProduct := *database_product.FindProductById(ctx, productId)
+		sanitizedProduct.DynamicAttributes = nil
+		sanitizedProduct.RenterInfo = nil
+		return Response(200, sanitizedProduct), nil
+	}
+
+	_, content, err := database_user.VerifyJWT(&token)
+	if err != nil {
+		log.Error().Msg("Couldn't verify token")
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
+	}
+
+	user := database_user.FindUserById(ctx, &content.ID)
+	if user == nil {
+		log.Error().Str("id", content.ID).Msg("User not found")
+		return Response(401, Error{ErrorMessages: []Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
+	}
+
+	if user.Roles != database_user.AdminUser {
+		sanitizedProduct := *database_product.FindProductById(ctx, productId)
+		sanitizedProduct.DynamicAttributes = nil
+		sanitizedProduct.RenterInfo = nil
+		return Response(200, sanitizedProduct), nil
+	}
+
+	product := database_product.FindProductById(ctx, productId)
+	return Response(200, product), nil
+}
+
+// ProductsProductIdRentPost - Rent a product
+func (s *UserAPIService) ProductsProductIdRentPost(ctx context.Context, productId string, rentProductFormular RentProductFormular, r *http.Request) (ImplResponse, error) {
+	// Read token from request header
+	token, found := openapi_common.ReadTokenFromHeader(r)
+	if !found {
+		log.Error().Msg("Bearer format invalid")
+		return Response(http.StatusUnauthorized, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. Please check your credentials.",
+				},
+			},
+		}), nil
+	}
+
+	// Verify JWT token
+	_, content, err := database_user.VerifyJWT(&token)
+	if err != nil {
+		log.Error().Msg("Couldn't verify token")
+		return Response(http.StatusUnauthorized, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. Please check your credentials.",
+				},
+			},
+		}), nil
+	}
+
+	// Get user profile to check if confirmed
+	user := database_user.FindUserById(ctx, &content.ID)
+	if user == nil {
+		return Response(http.StatusUnauthorized, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "101",
+					Message: "No user found",
+				},
+			},
+		}), nil
+	}
+
+	if user.Roles != database_user.ConfirmedUser {
+		return Response(http.StatusForbidden, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. Only confirmed users can rent products.",
+				},
+			},
+		}), nil
+	}
+
+	// Get product from database
+	product := database_product.FindProductById(ctx, productId)
+	if product == nil || product.IsRented {
+		return Response(http.StatusNotFound, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Product is unavailable",
+				},
+			},
+		}), nil
+	}
+
+	// Check if location is available and exists for product
+	location := database_location.FindLocationById(ctx, rentProductFormular.LocationId)
+	if location == nil || product.Location != rentProductFormular.LocationId {
+		return Response(http.StatusNotFound, Error{
+			ErrorMessages: []Message{
+				{Code: "200", Message: "Location not found"},
+			},
+		}), nil
+	}
+
+	// Only allow start date to be today
+	startDate := time.Unix(rentProductFormular.RentalStartDate, 0)
+	endDate := time.Unix(rentProductFormular.RentalEndDate, 0)
+	days := int(endDate.Sub(startDate).Hours() / 24)
+	today := time.Now()
+	todayAtZero := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
+	tomorrow := todayAtZero.AddDate(0, 0, 1)
+	tomorrowAtZero := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
+	if !(startDate.After(todayAtZero) && startDate.Before(tomorrowAtZero)) {
+		return Response(http.StatusBadRequest, Error{
+			ErrorMessages: []Message{
+				{Code: "200", Message: "Start date cannot be in the past or in the future"},
+			},
+		}), nil
+	}
+
+	// Calculate total amount
+	totalAmount := database_product.CalculateTotalAmount(product, days)
+
+	// Create rent contract
+	contract := database_rent_contract.CreateRentContract(
+		ctx,
+		productId,
+		user.ID,
+		rentProductFormular.RentalStartDate,
+		rentProductFormular.RentalEndDate,
+		product.Pricing.Price,
+		product.Pricing.Deposit,
+		totalAmount,
+		rentProductFormular.PaymentMethodId,
+		rentProductFormular.LocationId,
+		rentProductFormular.LocationId,
+		rentProductFormular.AdditionalNotes,
+		rentProductFormular.DynamicAttributes,
+	)
+
+	if contract == nil {
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to create rent contract",
+				},
+			},
+		}), nil
+	}
+
+	// Update product rental status
+	product.IsRented = true
+	product.RenterInfo = &database_product.RenterInfo{
+		UserID:          user.ID,
+		RentalStartDate: rentProductFormular.RentalStartDate,
+		RentalEndDate:   rentProductFormular.RentalEndDate,
+	}
+
+	updatedProduct := database_product.UpdateProduct(ctx, product)
+	if updatedProduct == nil {
+		// Rollback rent contract creation
+		database_rent_contract.DeleteRentContract(ctx, contract.ID, contract.Rev)
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to update product rental status",
+				},
+			},
+		}), nil
+	}
+
+	return Response(http.StatusOK, RentProductConfirmation{
+		RentContractId: contract.ID,
+	}), nil
+}
+
 // ProfileGet - Get user profile
 func (s *UserAPIService) ProfileGet(ctx context.Context, r *http.Request) (ImplResponse, error) {
 	user, err := openapi_common.IsUserAuthorized(ctx, r)
@@ -109,4 +352,196 @@ func (s *UserAPIService) ProfileGet(ctx context.Context, r *http.Request) (ImplR
 	}
 	sanitized := database_user.SanitizeUserProfile(user)
 	return Response(200, sanitized), nil
+}
+
+// RentalsRentContractIdPickupPost - Confirm product pickup
+func (s *UserAPIService) RentalsRentContractIdPickupPost(ctx context.Context, rentContractId string, pickupConfirmation PickupConfirmation, r *http.Request) (ImplResponse, error) {
+	// Verify user authorization
+	user, err := openapi_common.IsUserAuthorized(ctx, r)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return Response(http.StatusUnauthorized, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. Please check your credentials.",
+				},
+			},
+		}), nil
+	}
+
+	// Get rent contract
+	contract := database_rent_contract.FindRentContractById(ctx, rentContractId)
+	if contract == nil {
+		return Response(http.StatusNotFound, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Rent contract not found",
+				},
+			},
+		}), nil
+	}
+
+	// Verify contract belongs to user
+	if contract.UserID != user.ID {
+		return Response(http.StatusForbidden, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. This contract belongs to another user.",
+				},
+			},
+		}), nil
+	}
+
+	// Verify contract status is Pending
+	if contract.Status != database_rent_contract.RentContractStatusPending {
+		return Response(http.StatusBadRequest, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Invalid contract status. Contract must be in Pending status.",
+				},
+			},
+		}), nil
+	}
+
+	// Update contract status to Active
+	contract.Status = database_rent_contract.RentContractStatusActive
+	if contract.DynamicAttributes == nil {
+		contract.DynamicAttributes = make(map[string]interface{})
+	}
+	contract.DynamicAttributes["pickupImages"] = pickupConfirmation.PickupImages
+
+	updatedContract := database_rent_contract.UpdateRentContract(ctx, contract)
+	if updatedContract == nil {
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to update rent contract",
+				},
+			},
+		}), nil
+	}
+
+	// Update product rental status
+	product := database_product.FindProductById(ctx, contract.ProductID)
+	if product == nil {
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to find product",
+				},
+			},
+		}), nil
+	}
+
+	return Response(http.StatusOK, Success{}), nil
+}
+
+// RentalsRentContractIdReturnPost - Confirm product return
+func (s *UserAPIService) RentalsRentContractIdReturnPost(ctx context.Context, rentContractId string, returnProduct ReturnProduct, r *http.Request) (ImplResponse, error) {
+	// Verify user authorization
+	user, err := openapi_common.IsUserAuthorized(ctx, r)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return Response(http.StatusUnauthorized, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. Please check your credentials.",
+				},
+			},
+		}), nil
+	}
+
+	// Get rent contract
+	contract := database_rent_contract.FindRentContractById(ctx, rentContractId)
+	if contract == nil {
+		return Response(http.StatusNotFound, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Rent contract not found",
+				},
+			},
+		}), nil
+	}
+
+	// Verify contract belongs to user
+	if contract.UserID != user.ID {
+		return Response(http.StatusForbidden, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "100",
+					Message: "Unauthorized. This contract belongs to another user.",
+				},
+			},
+		}), nil
+	}
+
+	// Verify contract status is Active
+	if contract.Status != database_rent_contract.RentContractStatusActive {
+		return Response(http.StatusBadRequest, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "200",
+					Message: "Invalid contract status. Contract must be in Active status.",
+				},
+			},
+		}), nil
+	}
+
+	// Update contract status to Completed
+	contract.Status = database_rent_contract.RentContractStatusCompleted
+	if contract.DynamicAttributes == nil {
+		contract.DynamicAttributes = make(map[string]interface{})
+	}
+	contract.DynamicAttributes["returnImages"] = returnProduct.ReturnImages
+	contract.DynamicAttributes["returnNotes"] = returnProduct.AdditionalNotes
+
+	updatedContract := database_rent_contract.UpdateRentContract(ctx, contract)
+	if updatedContract == nil {
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to update rent contract",
+				},
+			},
+		}), nil
+	}
+
+	// Update product rental status
+	product := database_product.FindProductById(ctx, contract.ProductID)
+	if product == nil {
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to find product",
+				},
+			},
+		}), nil
+	}
+
+	product.IsRented = false
+	product.RenterInfo = nil
+	updatedProduct := database_product.UpdateProduct(ctx, product)
+	if updatedProduct == nil {
+		// Rollback contract status
+		return Response(http.StatusInternalServerError, Error{
+			ErrorMessages: []Message{
+				{
+					Code:    "001",
+					Message: "Failed to update product rental status",
+				},
+			},
+		}), nil
+	}
+
+	return Response(http.StatusOK, Success{}), nil
 }

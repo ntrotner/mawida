@@ -1,3 +1,4 @@
+apis/AdminApi.ts
 apis/AuthenticationApi.ts
 apis/StatusApi.ts
 apis/UserApi.ts
@@ -6,9 +7,22 @@ index.ts
 models/ChangeEmail.ts
 models/ChangePassword.ts
 models/Health.ts
+models/Location.ts
+models/LocationCoordinates.ts
 models/Message.ts
 models/ModelError.ts
 models/PasswordReset.ts
+models/PickupConfirmation.ts
+models/Product.ts
+models/ProductDocumentsInner.ts
+models/ProductImagesInner.ts
+models/ProductPricing.ts
+models/ProductPublic.ts
+models/ProductPublicAllOfRenterInfo.ts
+models/ProductsProductIdGet200Response.ts
+models/RentProductConfirmation.ts
+models/RentProductFormular.ts
+models/ReturnProduct.ts
 models/Success.ts
 models/UserLogin.ts
 models/UserProfile.ts
