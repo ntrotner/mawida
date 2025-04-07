@@ -1,8 +1,8 @@
 version: '3.7'
 
 services:
-  proxy:
-    container_name: nginx
+  mawida_proxy:
+    container_name: mawida_nginx
     image: 'jc21/nginx-proxy-manager:latest'
     restart: unless-stopped
     networks:
@@ -20,11 +20,11 @@ services:
     volumes:
       - ./dockerfiles/nginx:/data
     depends_on:
-      - ui
-      - backend
-      - database
-  ui:
-    container_name: ui
+      - mawida_ui
+      - mawida_backend
+      - mawida_database
+  mawida_ui:
+    container_name: mawida_ui
     build:
       context: .
       dockerfile: ./dockerfiles/ui.Dockerfile
@@ -37,8 +37,8 @@ services:
       - ./src/ui/src:/src/src
     env_file:
       - ./environment/dev/ui.env
-  backend:
-    container_name: backend
+  mawida_backend:
+    container_name: mawida_backend
     build:
       context: .
       dockerfile: ./dockerfiles/backend.Dockerfile
@@ -52,9 +52,9 @@ services:
     env_file:
       - ./environment/dev/backend.env
     depends_on:
-      - database
-  database:
-    container_name: db
+      - mawida_database
+  mawida_database:
+    container_name: mawida_db
     build:
       context: .
       dockerfile: ./dockerfiles/database.Dockerfile
