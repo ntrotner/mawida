@@ -3,13 +3,10 @@ package database_rent_contract
 type RentContractStatus string
 
 const (
-	RentContractStatusPending   RentContractStatus = "pending"
-	RentContractStatusConfirmed RentContractStatus = "confirmed"
-	RentContractStatusActive    RentContractStatus = "active"
-	RentContractStatusCompleted RentContractStatus = "completed"
-	RentContractStatusCancelled RentContractStatus = "cancelled"
-	RentContractStatusOverdue   RentContractStatus = "overdue"
-	RentContractStatusDisputed  RentContractStatus = "disputed"
+	RentContractStatusPickupPending RentContractStatus = "pickupPending"
+	RentContractStatusConfirmed     RentContractStatus = "confirmed"
+	RentContractStatusActive        RentContractStatus = "active"
+	RentContractStatusCompleted     RentContractStatus = "completed"
 )
 
 type RentContract struct {

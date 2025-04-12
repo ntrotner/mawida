@@ -1,9 +1,9 @@
 <script lang="ts">
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import * as Card from "$lib/components/ui/card/index.js";
+  import * as Form from "$lib/components/ui/form/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
-  import { Label } from "$lib/components/ui/label/index.js";
   import { t } from "$lib/i18n";
   import { appState } from "$lib/states/app";
   import { login, register } from "$lib/states/authentication";
@@ -14,13 +14,27 @@
   import { onDestroy } from "svelte";
   import Alert from "../../components/alert/Alert.svelte";
   import { map } from "rxjs";
+  import { superForm } from "sveltekit-superforms";
 
+  // Reactive state management
   const subscriptions: Unsubscriber[] = [];
   const errors = writable<string[]>([]);
+  const requestInProcess = writable(false);
+  
+  // Form data stores
+  const loginData = { username: "", password: "" };
+  const registerData = { username: "", password: "", repeatPassword: "" };
+  
+  // Initialize superForms
+  const loginForm = superForm(loginData);
+  const registerForm = superForm(registerData);
+  const { form: loginFormData } = loginForm;
+  const { form: registerFormData } = registerForm;
+  
+  // Responsive state
   const mobile = appState
     .observable()
     .pipe(map((state) => (state?.width || 0) <= 640));
-  const requestInProcess = writable(false);
 
   function isValid(input: string) {
     return input.trim().length !== 0;
@@ -43,19 +57,17 @@
   async function submitLogin() {
     requestInProcess.set(true);
     try {
-      const username =
-        (document.querySelector("#loginusername") as HTMLInputElement)?.value ||
-        "";
-      const password =
-        (document.querySelector("#loginpassword") as HTMLInputElement)?.value ||
-        "";
+      const { username, password } = $loginFormData;
+      
       if (!isValid(username) || !isValid(password)) {
         fillErrors({
           errorMessages: [{ code: "200", message: "User or Password Invalid" }],
         });
         throw new Error("");
       }
+      
       const response = await login(username, password);
+      
       if (!response) {
         fillErrors({
           errorMessages: [{ code: "100", message: "Server Failure" }],
@@ -73,15 +85,7 @@
   async function submitRegister() {
     requestInProcess.set(true);
     try {
-      const username =
-        (document.querySelector("#registerusername") as HTMLInputElement)
-          ?.value || "";
-      const password =
-        (document.querySelector("#registerpassword") as HTMLInputElement)
-          ?.value || "";
-      const repeatPassword =
-        (document.querySelector("#registerrepeatpassword") as HTMLInputElement)
-          ?.value || "";
+      const { username, password, repeatPassword } = $registerFormData;
 
       if (!isValid(username) || !isValid(password)) {
         fillErrors({
@@ -89,6 +93,7 @@
         });
         throw new Error("");
       }
+      
       if (password !== repeatPassword) {
         fillErrors({
           errorMessages: [{ code: "200", message: "Passwords don't match" }],
@@ -97,6 +102,7 @@
       }
 
       const response = await register(username, password);
+      
       if (!response) {
         fillErrors({
           errorMessages: [{ code: "100", message: "Server Failure" }],
@@ -111,128 +117,131 @@
     }
   }
 
-  function loginSubmitOnEnter(e: any) {
-    try {
-      e.keyCode === 13 ? submitLogin() : null;
-    } catch {}
-  }
-
-  function registerSubmitOnEnter(e: any) {
-    try {
-      e.keyCode === 13 ? submitRegister() : null;
-    } catch {}
-  }
-
   function clear() {
     $errors = [];
-    (document.querySelector("#registerusername") as HTMLInputElement).value =
-      "";
-    (document.querySelector("#registerpassword") as HTMLInputElement).value =
-      "";
-    (document.querySelector("#loginusername") as HTMLInputElement).value = "";
-    (document.querySelector("#loginpassword") as HTMLInputElement).value = "";
+    $loginFormData = { username: "", password: "" };
+    $registerFormData = { username: "", password: "", repeatPassword: "" };
   }
 
   onDestroy(() => subscriptions.forEach((s) => s()));
 </script>
 
-<div class="container {mobile ? 'pt-8' : 'pt-16'}">
+<div class="container {$mobile ? 'pt-8' : 'pt-16'}">
   <Tabs.Root onValueChange={clear} value="login" class="w-[475px]">
     <Tabs.List class="grid w-full grid-cols-2 mb-4">
-      <Tabs.Trigger value="login" disabled={$requestInProcess}
-        >{$t("login.login-title")}</Tabs.Trigger
-      >
-      <Tabs.Trigger value="register" disabled={$requestInProcess}
-        >{$t("login.register-title")}</Tabs.Trigger
-      >
+      <Tabs.Trigger value="login" disabled={$requestInProcess}>
+        {$t("login.login-title")}
+      </Tabs.Trigger>
+      <Tabs.Trigger value="register" disabled={$requestInProcess}>
+        {$t("login.register-title")}
+      </Tabs.Trigger>
     </Tabs.List>
+    
     <Tabs.Content value="login">
       <Alert
         messages={$errors}
         title={$t("login.input-error-title")}
         variant="destructive"
-      ></Alert>
+      />
+      
       <Card.Root>
-        <Card.Content class="space-y-2 mt-5">
-          <div class="space-y-1">
-            <Label for="loginusername">{$t("login.username")}</Label>
-            <Input
-              id="loginusername"
-              on:keypress={loginSubmitOnEnter}
-              type="email"
-              value=""
-              disabled={$requestInProcess}
-            />
-          </div>
-          <div class="space-y-1">
-            <Label for="password">{$t("login.password")}</Label>
-            <Input
-              id="loginpassword"
-              on:keypress={loginSubmitOnEnter}
-              type="password"
-              value=""
-              disabled={$requestInProcess}
-            />
-          </div>
-        </Card.Content>
-        <Card.Footer>
-          <div class="submit">
+        <form on:submit|preventDefault={submitLogin}>
+          <Card.Content class="space-y-2 mt-5">
+            <Form.Field form={loginForm} name="username">
+              <Form.Control let:attrs>
+                <Form.Label>{$t("login.username")}</Form.Label>
+                <Input
+                  {...attrs}
+                  type="email"
+                  bind:value={$loginFormData.username}
+                  disabled={$requestInProcess}
+                />
+              </Form.Control>
+            </Form.Field>
+            
+            <Form.Field form={loginForm} name="password">
+              <Form.Control let:attrs>
+                <Form.Label>{$t("login.password")}</Form.Label>
+                <Input
+                  {...attrs}
+                  type="password"
+                  bind:value={$loginFormData.password}
+                  disabled={$requestInProcess}
+                />
+              </Form.Control>
+            </Form.Field>
+          </Card.Content>
+          
+          <Card.Footer>
             <Button
-              class="w-[100%]"
-              on:click={submitLogin}
-              disabled={$requestInProcess}>{$t("login.login-button")}</Button
+              type="submit"
+              class="w-full"
+              disabled={$requestInProcess}
             >
-          </div>
-        </Card.Footer>
+              {$t("login.login-button")}
+            </Button>
+          </Card.Footer>
+        </form>
       </Card.Root>
     </Tabs.Content>
+    
     <Tabs.Content value="register">
       <Alert
         messages={$errors}
         title={$t("login.input-error-title")}
         variant="destructive"
-      ></Alert>
+      />
+      
       <Card.Root>
-        <Card.Content class="space-y-2 mt-5">
-          <div class="space-y-1">
-            <Label for="registerusername">{$t("login.username")}</Label>
-            <Input
-              id="registerusername"
-              on:keypress={registerSubmitOnEnter}
-              type="email"
-              disabled={$requestInProcess}
-            />
-          </div>
-          <div class="space-y-1">
-            <Label for="registerpassword">{$t("login.password")}</Label>
-            <Input
-              id="registerpassword"
-              on:keypress={registerSubmitOnEnter}
-              type="password"
-              disabled={$requestInProcess}
-            />
-          </div>
-          <div class="space-y-1">
-            <Label for="registerrepeatpassword"
-              >{$t("login.password-repeat")}</Label
-            >
-            <Input
-              id="registerrepeatpassword"
-              on:keypress={registerSubmitOnEnter}
-              type="password"
-              disabled={$requestInProcess}
-            />
-          </div>
-        </Card.Content>
-        <Card.Footer>
-          <div class="submit">
+        <form on:submit|preventDefault={submitRegister}>
+          <Card.Content class="space-y-2 mt-5">
+            <Form.Field form={registerForm} name="username">
+              <Form.Control let:attrs>
+                <Form.Label>{$t("login.username")}</Form.Label>
+                <Input
+                  {...attrs}
+                  type="email"
+                  bind:value={$registerFormData.username}
+                  disabled={$requestInProcess}
+                />
+              </Form.Control>
+            </Form.Field>
+            
+            <Form.Field form={registerForm} name="password">
+              <Form.Control let:attrs>
+                <Form.Label>{$t("login.password")}</Form.Label>
+                <Input
+                  {...attrs}
+                  type="password"
+                  bind:value={$registerFormData.password}
+                  disabled={$requestInProcess}
+                />
+              </Form.Control>
+            </Form.Field>
+            
+            <Form.Field form={registerForm} name="repeatPassword">
+              <Form.Control let:attrs>
+                <Form.Label>{$t("login.password-repeat")}</Form.Label>
+                <Input
+                  {...attrs}
+                  type="password"
+                  bind:value={$registerFormData.repeatPassword}
+                  disabled={$requestInProcess}
+                />
+              </Form.Control>
+            </Form.Field>
+          </Card.Content>
+          
+          <Card.Footer>
             <Button
-              class="w-[100%]"
-              on:click={submitRegister}
-              disabled={$requestInProcess}>{$t("login.register-button")}</Button
+              type="submit"
+              class="w-full"
+              disabled={$requestInProcess}
             >
-          </div>
-        </Card.Footer>
+              {$t("login.register-button")}
+            </Button>
+          </Card.Footer>
+        </form>
       </Card.Root>
     </Tabs.Content>
   </Tabs.Root>
@@ -243,14 +252,5 @@
     display: flex;
     flex-direction: row;
     justify-content: center;
-  }
-
-  .submit {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: stretch;
-    flex-wrap: nowrap;
   }
 </style>

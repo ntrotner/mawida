@@ -11,14 +11,17 @@ Run `make setup-env`
 See `/docs/best-practice` for code guide
 
 ## Run
+Prepare env `make setup-env-file TARGET=dev` / `make setup-env-file TARGET=prod`
 Run `make run TARGET=dev` / `make run TARGET=prod`
 
 ## Regenerate OpenAPI
 Run `make openapi-generate`
 Consolidate updated openapi output.
 
-## Create Release
-Run `make release VERSION=1.0.0`
+## Deployment
+Prepare env `make setup-env-file-deployment TARGET=dev` / `make setup-env-file-deployment TARGET=prod`
+Run `make deploy`
+Run `make clean-deployment` to shut-down
 
 ## Proxy
 [NGINX Proxy Manager](https://nginxproxymanager.com/)

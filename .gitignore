@@ -1,11 +1,21 @@
+# dependencies/dev env
 node_modules
 dist
 dist-dev
 builds/*
 .env
+output/
+output
+
+# nginx docker files
 dockerfiles/nginx/logs
 dockerfiles/nginx/keys.json
-environment/prod/build.env
-build.env
-output
-resources.parameters.json
+
+# db docker files
+dockerfiles/db/
+
+# deployment files
+environment/prod/*.env
+
+# ide
+.idea/

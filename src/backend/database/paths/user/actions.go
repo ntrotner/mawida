@@ -3,16 +3,17 @@ package database_user
 import (
 	"context"
 	"errors"
-	database_common "template_backend/database/common"
+	authentication "template_backend/infrastructure/authentication"
 
 	"github.com/go-kivik/kivik"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
+// CreateUser creates a new user in the database
 func CreateUser(ctx context.Context, email string, password string) (*UserProfile, error) {
 	uniqueID := uuid.NewString()
-	hash, salt, err := database_common.CreatePassword(&password)
+	hash, salt, err := authentication.CreatePassword(&password)
 	if err != nil {
 		log.Error().
 			Str("email", email).
@@ -69,13 +70,14 @@ func ChangeUserEmail(ctx context.Context, id *string, newEmail *string) (*UserPr
 	return user, nil
 }
 
+// ChangeUserPassword changes the password of a user in the database
 func ChangeUserPassword(ctx context.Context, id *string, newPassword *string) (*UserProfile, error) {
 	user := FindUserById(ctx, id)
 	if user == nil {
 		return nil, errors.New("couldn't find user")
 	}
 
-	hash, salt, err := database_common.CreatePassword(newPassword)
+	hash, salt, err := authentication.CreatePassword(newPassword)
 	if err != nil {
 		log.Error().
 			Str("id", *id).

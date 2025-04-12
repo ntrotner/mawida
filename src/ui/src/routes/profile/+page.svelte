@@ -14,20 +14,30 @@
   import { writable } from "svelte/store";
   import { toast } from "svelte-sonner";
 
-  let errorsEmail = writable<string[]>([]);
-  let errorsPassword = writable<string[]>([]);
-  let emailData = { value: "", repeated: "" };
-  let passwordData = { old: "", value: "", repeated: "" };
+  // Error stores
+  const errorsEmail = writable<string[]>([]);
+  const errorsPassword = writable<string[]>([]);
+  
+  // Form data initial values
+  const emailInitialData = { value: "", repeated: "" };
+  const passwordInitialData = { old: "", value: "", repeated: "" };
 
-  const emailForm = superForm(emailData);
-  const passwordForm = superForm(passwordData);
+  // Initialize superForms
+  const emailForm = superForm(emailInitialData);
+  const passwordForm = superForm(passwordInitialData);
   const { form: emailFormData } = emailForm;
   const { form: passwordFormData } = passwordForm;
+  
+  // User email from state
   const userStateEmail = userState
     .observable()
     .pipe(map((state) => state?.email));
 
+  /**
+   * Handle email change submission
+   */
   async function submitChangeEmail() {
+    // Validate form data
     if (
       $emailFormData.value === "" ||
       $emailFormData.value !== $emailFormData.repeated
@@ -36,10 +46,13 @@
       return;
     }
 
+    // Submit change request
     const response = await changeEmailOfUser(
       $userStateEmail,
       $emailFormData.value
     );
+    
+    // Process any error messages
     $errorsEmail = (response?.errorMessages
       ?.map(({ message }) => message)
       .filter((message) => typeof message === "string" && message.length > 0) ||
@@ -48,12 +61,18 @@
     if ($errorsEmail.length > 0) {
       return;
     }
+    
+    // Show success message and reset form
     toast.success($t("profile.email-change-successful"));
     $emailFormData = { value: "", repeated: "" };
     $errorsEmail = [];
   }
 
+  /**
+   * Handle password change submission
+   */
   async function submitChangePassword() {
+    // Validate form data
     if (
       $passwordFormData.value === "" ||
       $passwordFormData.old === "" ||
@@ -62,10 +81,14 @@
       $errorsPassword = ["Please check your input"];
       return;
     }
+    
+    // Submit change request
     const response = await changePasswordOfUser(
       $passwordFormData.old,
       $passwordFormData.value
     );
+    
+    // Process any error messages
     $errorsPassword = (response?.errorMessages
       ?.map(({ message }) => message)
       .filter((message) => typeof message === "string" && message.length > 0) ||
@@ -74,6 +97,8 @@
     if ($errorsPassword.length > 0) {
       return;
     }
+    
+    // Show success message and reset form
     toast.success($t("profile.password-change-successful"));
     $passwordFormData = { value: "", old: "", repeated: "" };
     $errorsPassword = [];
@@ -89,6 +114,7 @@
       {$t("profile.profile-description")}
     </p>
   </div>
+  
   <Separator />
 
   <div class="profile-form-wrapper">
@@ -171,14 +197,14 @@
 </div>
 
 <style>
-  .header .description {
-    margin: 0.5rem 0;
-  }
-
   .wrapper {
     margin: 1.8rem auto;
     padding: 0 2.5rem;
     max-width: 40rem;
+  }
+
+  .header .description {
+    margin: 0.5rem 0;
   }
 
   .profile-form-wrapper {

@@ -29,6 +29,18 @@
     {
       "name": "status",
       "description": "Check application health"
+    },
+    {
+      "name": "location",
+      "description": "Check and create locations for rentals"
+    },
+    {
+      "name": "product",
+      "description": "Modify and retrieve products"
+    },
+    {
+      "name": "rental",
+      "description": "Access rental contracts and modify or check their status"
     }
   ],
   "paths": {
@@ -210,7 +222,7 @@
     "/locations": {
       "post": {
         "tags": [
-          "admin"
+          "location"
         ],
         "summary": "Create a new location",
         "requestBody": {
@@ -230,7 +242,7 @@
       },
       "get": {
         "tags": [
-          "user"
+          "location"
         ],
         "summary": "Retrieve all locations",
         "responses": {
@@ -246,7 +258,7 @@
     "/location/{locationId}": {
       "get": {
         "tags": [
-          "user"
+          "location"
         ],
         "summary": "Retrieve a single location",
         "parameters": [
@@ -276,7 +288,7 @@
     "/products": {
       "post": {
         "tags": [
-          "admin"
+          "product"
         ],
         "summary": "Create a new product",
         "requestBody": {
@@ -296,7 +308,7 @@
       },
       "get": {
         "tags": [
-          "admin"
+          "product"
         ],
         "summary": "Retrieve all products",
         "responses": {
@@ -312,7 +324,7 @@
     "/products/{productId}": {
       "get": {
         "tags": [
-          "user"
+          "product"
         ],
         "summary": "Retrieve a single product",
         "parameters": [
@@ -339,46 +351,10 @@
         }
       }
     },
-    "/rentals/{rentContractId}/pickup": {
-      "post": {
-        "tags": [
-          "user"
-        ],
-        "summary": "Confirm product pickup",
-        "parameters": [
-          {
-            "name": "rentContractId",
-            "in": "path",
-            "required": true,
-            "description": "The ID of the rent contract",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "$ref": "#/components/requestBodies/PickupConfirmation"
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/Success"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          },
-          "404": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
     "/products/{productId}/rent": {
       "post": {
         "tags": [
-          "user"
+          "product"
         ],
         "summary": "Rent a product",
         "parameters": [
@@ -411,10 +387,46 @@
         }
       }
     },
+    "/rentals/{rentContractId}/pickup": {
+      "post": {
+        "tags": [
+          "rental"
+        ],
+        "summary": "Confirm product pickup",
+        "parameters": [
+          {
+            "name": "rentContractId",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the rent contract",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/PickupConfirmation"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/rentals/{rentContractId}/return": {
       "post": {
         "tags": [
-          "user"
+          "rental"
         ],
         "summary": "Confirm product return",
         "parameters": [
@@ -836,7 +848,7 @@
       "Product": {
         "type": "object",
         "properties": {
-          "ID": {
+          "id": {
             "type": "string",
             "description": "Unique identifier for the product"
           },
@@ -853,7 +865,7 @@
             "items": {
               "type": "object",
               "properties": {
-                "ID": {
+                "id": {
                   "type": "string",
                   "description": "Unique identifier for the image"
                 },
@@ -868,7 +880,7 @@
                 }
               },
               "required": [
-                "ID",
+                "id",
                 "name",
                 "data"
               ]
@@ -880,7 +892,7 @@
             "items": {
               "type": "object",
               "properties": {
-                "ID": {
+                "id": {
                   "type": "string",
                   "description": "Unique identifier for the document"
                 },
@@ -895,7 +907,7 @@
                 }
               },
               "required": [
-                "ID",
+                "id",
                 "name",
                 "data"
               ]
@@ -946,7 +958,7 @@
           {
             "type": "object",
             "properties": {
-              "ID": {
+              "id": {
                 "type": "string",
                 "description": "Unique identifier for the product"
               },

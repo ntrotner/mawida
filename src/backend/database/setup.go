@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"template_backend/common"
+	"template_backend/core/config"
 	database_location "template_backend/database/paths/location"
 	database_product "template_backend/database/paths/product"
 	database_rent_contract "template_backend/database/paths/rent_contract"
@@ -22,9 +22,10 @@ type databaseConnector struct {
 var Connection databaseConnector
 var databases = make(map[string]*kivik.DB)
 
+// createConnection creates a connection to the database
 func createConnection(ctx context.Context) *kivik.Client {
 	for {
-		client, err := kivik.New("couch", common.EnvironmentConfig.DatabaseHost)
+		client, err := kivik.New("couch", config.GlobalConfig.Database.Host)
 
 		if err != nil {
 			log.Fatal().Msg("Database Connection Failed: " + err.Error())
@@ -45,6 +46,7 @@ func createConnection(ctx context.Context) *kivik.Client {
 	}
 }
 
+// createDatabase creates a database
 func createDatabase(ctx context.Context, dbName string) {
 	exists, err := Connection.Client.DBExists(ctx, dbName)
 	if err != nil {
@@ -59,6 +61,7 @@ func createDatabase(ctx context.Context, dbName string) {
 	databases[dbName] = Connection.Client.DB(ctx, dbName)
 }
 
+// Connect connects to the database
 func Connect(ctx context.Context) {
 	Connection = databaseConnector{
 		Client: createConnection(ctx),

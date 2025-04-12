@@ -5,4 +5,6 @@ WORKDIR /src
 RUN npm install
 RUN npm i -g vite
 RUN npm run postinstall
-ENTRYPOINT if [ "$app_env" = "prod" ] ; then npm run preview ; else npm run dev ; fi
+
+EXPOSE 8000
+ENTRYPOINT if [ "$app_env" = "prod" ] ; then npm run serve-prod ; else npm run dev ; fi

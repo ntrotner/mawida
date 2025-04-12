@@ -3,10 +3,12 @@ package database_user
 import (
 	"context"
 	database_common "template_backend/database/common"
+	authentication "template_backend/infrastructure/authentication"
 
 	"github.com/rs/zerolog/log"
 )
 
+// createFindUserQuery creates a query to find a user in the database
 func createFindUserQuery(email *string, id *string, fields []interface{}) database_common.Query {
 	query := database_common.Query{
 		Selector: map[string]interface{}{},
@@ -24,6 +26,7 @@ func createFindUserQuery(email *string, id *string, fields []interface{}) databa
 	return query
 }
 
+// ExistsEmail checks if a user exists in the database by email
 func ExistsEmail(ctx context.Context, email string) bool {
 	emailInCache := Cache.getUserByEmail(&email)
 	if emailInCache != nil {
@@ -48,6 +51,7 @@ func ExistsEmail(ctx context.Context, email string) bool {
 	return false
 }
 
+// FindUserById finds a user in the database by id
 func FindUserById(ctx context.Context, id *string) *UserProfile {
 	userInCache := Cache.getUserById(id)
 	if userInCache != nil {
@@ -74,6 +78,7 @@ func FindUserById(ctx context.Context, id *string) *UserProfile {
 	return nil
 }
 
+// FindUserByEmail finds a user in the database by email
 func FindUserByEmail(ctx context.Context, email *string) *UserProfile {
 	userInCache := Cache.getUserByEmail(email)
 	if userInCache != nil {
@@ -100,12 +105,13 @@ func FindUserByEmail(ctx context.Context, email *string) *UserProfile {
 	return nil
 }
 
+// AuthenticateUser authenticates a user in the database by email and password
 func AuthenticateUser(ctx context.Context, email string, password string) *UserProfile {
 	user := FindUserByEmail(ctx, &email)
 	if user == nil {
 		return nil
 	}
-	passwordMatches := database_common.CheckPassword(&password, &user.Hash, &user.Salt)
+	passwordMatches := authentication.CheckPassword(&password, &user.Hash, &user.Salt)
 	if !passwordMatches {
 		return nil
 	}
@@ -113,12 +119,13 @@ func AuthenticateUser(ctx context.Context, email string, password string) *UserP
 	return user
 }
 
+// AuthenticateUserById authenticates a user in the database by id
 func AuthenticateUserById(ctx context.Context, id string, password string) *UserProfile {
 	user := FindUserById(ctx, &id)
 	if user == nil {
 		return nil
 	}
-	passwordMatches := database_common.CheckPassword(&password, &user.Hash, &user.Salt)
+	passwordMatches := authentication.CheckPassword(&password, &user.Hash, &user.Salt)
 	if !passwordMatches {
 		return nil
 	}

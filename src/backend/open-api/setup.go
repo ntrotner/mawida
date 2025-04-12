@@ -2,34 +2,48 @@ package openapi
 
 import (
 	"net/http"
-	"template_backend/common"
-	openapi "template_backend/open-api/go"
+	config "template_backend/core/config"
+	authentication "template_backend/open-api/handlers/authentication"
+	core "template_backend/open-api/handlers/core"
+	location "template_backend/open-api/handlers/location"
+	product "template_backend/open-api/handlers/product"
+	rental "template_backend/open-api/handlers/rental"
+	user "template_backend/open-api/handlers/user"
+	runtime "template_backend/open-api/runtime"
 
 	"github.com/rs/zerolog/log"
 )
 
 func SetupHttp() {
-	AdminAPIService := openapi.NewAdminAPIService()
-	AdminAPIController := openapi.NewAdminAPIController(AdminAPIService)
+	AuthenticationAPIService := authentication.NewAuthenticationAPIService()
+	AuthenticationAPIController := authentication.NewAuthenticationAPIController(AuthenticationAPIService)
 
-	AuthenticationAPIService := openapi.NewAuthenticationAPIService()
-	AuthenticationAPIController := openapi.NewAuthenticationAPIController(AuthenticationAPIService)
+	StatusAPIService := core.NewStatusAPIService()
+	StatusAPIController := core.NewStatusAPIController(StatusAPIService)
 
-	StatusAPIService := openapi.NewStatusAPIService()
-	StatusAPIController := openapi.NewStatusAPIController(StatusAPIService)
+	UserAPIService := user.NewUserAPIService()
+	UserAPIController := user.NewUserAPIController(UserAPIService)
 
-	UserAPIService := openapi.NewUserAPIService()
-	UserAPIController := openapi.NewUserAPIController(UserAPIService)
+	LocationAPIService := location.NewLocationAPIService()
+	LocationAPIController := location.NewLocationAPIController(LocationAPIService)
 
-	router := openapi.NewRouter(
+	ProductAPIService := product.NewProductAPIService()
+	ProductAPIController := product.NewProductAPIController(ProductAPIService)
+
+	RentalAPIService := rental.NewRentalAPIService()
+	RentalAPIController := rental.NewRentalAPIController(RentalAPIService)
+
+	router := runtime.NewRouter(
 		AuthenticationAPIController,
-		AdminAPIController,
 		StatusAPIController,
 		UserAPIController,
+		LocationAPIController,
+		ProductAPIController,
+		RentalAPIController,
 	)
-	common.SetupPerformanceLogger(router)
-	common.SetupSwaggerUi(router)
+	core.SetupPerformanceLogger(router)
+	core.SetupSwaggerUi(router)
 
-	log.Info().Msg("Listening on: " + common.EnvironmentConfig.Host)
-	log.Fatal().Msg(http.ListenAndServe(common.EnvironmentConfig.Host, router).Error())
+	log.Info().Msg("Listening on: " + config.GlobalConfig.Server.Address)
+	log.Fatal().Msg(http.ListenAndServe(config.GlobalConfig.Server.Address, router).Error())
 }

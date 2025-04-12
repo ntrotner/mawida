@@ -1,4 +1,6 @@
 #!make
+TARGET ?= prod
+include ${PWD}/environment/global.env
 
 # Env setup
 DOCKER_COMPOSE := ""
@@ -11,10 +13,6 @@ else
 	exit 1
 endif
 
-# Prod setup
-include ${PWD}/environment/prod/build.env
-export $(shell sed 's/=.*//' ${PWD}/environment/prod/build.env)
-
 SHELL := /bin/bash
 
 setup-env:
@@ -24,22 +22,36 @@ setup-env:
 	go install github.com/bykof/go-plantuml@latest
 	cd ./src/ui && npm install
 
+# TARGET = dev/prod
+setup-env-file:
+	./scripts/setup-env-file.sh ${TARGET}
+  export $(shell sed 's/=.*//' ${PWD}/environment/global.env)
+
+setup-env-file-deployment:
+	./scripts/setup-env-file.sh prod
+  export $(shell sed 's/=.*//' ${PWD}/environment/global.env)
+
+deploy:
+	make clean || true
+	docker network create host_network || true
+	export docker_env=PROD && ${DOCKER_COMPOSE} --profile deployment up --build --remove-orphans --force-recreate -d
+
 # Start
 # run app in local for development
 # TARGET = dev/prod
 run:
 	make clean || true
 	docker network create host_network || true
-	export docker_env=${TARGET} && ${DOCKER_COMPOSE} up --build --remove-orphans --force-recreate
-
-shutdown:
-	$(DOCKER_COMPOSE) down
-	$(DOCKER_COMPOSE) stop ui db backend nginx
+	make setup-env-file
+	export docker_env=${TARGET} && ${DOCKER_COMPOSE} --profile local up --build --remove-orphans --force-recreate
 
 clean:
-	make shutdown
-	docker container rm nginx ui backend db
-	docker network rm host_network
+	make setup-env-file-deployment
+	export docker_env=${TARGET} && $(DOCKER_COMPOSE) --profile local down
+
+clean-deployment:
+	make setup-env-file-deployment
+	export docker_env=prod && $(DOCKER_COMPOSE) --profile deployment down
 
 # OpenAPI
 openapi-generate-backend:
@@ -67,21 +79,3 @@ openapi-generate-ui:
 openapi-generate:
 	make openapi-generate-backend
 	make openapi-generate-ui
-
-# Release
-release-ui:
-	echo "" >> ${PWD}/src/ui/.env
-	cat ${PWD}/environment/prod/build.env >> ${PWD}/src/ui/.env
-	cd ${PWD}/src/ui && npm install && npm run build
-
-	swa login
-	cd ${PWD}/src/ui && swa deploy ${PWD}/src/ui/build --env=${docker_env} --subscription-id=${AZURE_SUBSCRIPTION_ID} --deployment-token=${SWA_CLI_DEPLOYMENT_TOKEN}
-
-release-backend:
-	docker build -f ${PWD}/dockerfiles/backend.Dockerfile -t ${container_registry}/${app_name}-backend:${VERSION} .
-	docker image push ${container_registry}/${app_name}-backend:${VERSION}
-
-release:
-	make shutdown 
-	make release-ui
-	make release-backend

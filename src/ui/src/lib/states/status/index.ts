@@ -1,3 +1,3 @@
 export * from './effects';
 export * from './status';
-export * from './config';
+export * from '../config/collection/app';

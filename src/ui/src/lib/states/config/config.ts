@@ -1,7 +1,7 @@
 import { Observable, distinctUntilChanged, map } from "rxjs";
 import { DefaultState } from "../common/state";
 import type { Config, Configuration } from "./model";
-import { defaultLoggerConfig } from "../../analytics/config";
+import { defaultLoggerConfig } from "./collection/logger";
 import { defaultAppConfig } from "../status";
 
 /**

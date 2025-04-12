@@ -19,7 +19,7 @@ func CreateRentContract(ctx context.Context, productId string, userId string, re
 		UserID:            userId,
 		RentalStartDate:   rentalStartDate,
 		RentalEndDate:     rentalEndDate,
-		Status:            RentContractStatusPending,
+		Status:            RentContractStatusConfirmed,
 		Price:             price,
 		Deposit:           deposit,
 		TotalAmount:       totalAmount,
