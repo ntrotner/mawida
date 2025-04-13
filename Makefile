@@ -34,7 +34,7 @@ setup-env-file-deployment:
 deploy:
 	make clean || true
 	docker network create host_network || true
-	export docker_env=PROD && ${DOCKER_COMPOSE} --profile deployment up --build --remove-orphans --force-recreate -d
+	export docker_env=prod && ${DOCKER_COMPOSE} --profile deployment up --build --remove-orphans --force-recreate -d
 
 # Start
 # run app in local for development
