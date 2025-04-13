@@ -1,6 +1,6 @@
 import { filter, switchMap, take } from "rxjs";
 import { configState } from "../../states/config";
-import { type LoggerConfig, LoggerConfigKey } from "../config";
+import { type LoggerConfig, LoggerConfigKey } from "../../states/config/collection/logger";
 import { MessageType, type Log } from "./model";
 
 class Logger {

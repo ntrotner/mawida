@@ -13,6 +13,7 @@ const USER_DB = "userprofiles"
 var DatabaseUser *kivik.DB
 var Cache *UserCache
 
+// createIndex creates an index on the user database
 func createIndex(ctx context.Context) {
 	indexEmail := map[string]interface{}{
 		"fields": []string{"email"},
@@ -43,6 +44,7 @@ func createIndex(ctx context.Context) {
 	}
 }
 
+// SetupUser sets up the user database
 func SetupUser(ctx context.Context, databases map[string]*kivik.DB) {
 	DatabaseUser = databases[USER_DB]
 	Cache = NewUserCache(ctx)
