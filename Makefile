@@ -56,7 +56,7 @@ clean-deployment:
 # OpenAPI
 openapi-generate-backend:
 	docker run --rm --user 1000:1000 \
-			-v ${PWD}/src/backend/open-api:/local \
+			-v ${PWD}/src/backend/open-api/temp:/local \
 			-v ${PWD}/shared:/shared \
 			-v /usr/local/go/bin/gofmt:/usr/local/bin/gofmt \
 			-e GO_POST_PROCESS_FILE="/usr/local/bin/gofmt -w" \
