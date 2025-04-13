@@ -58,7 +58,7 @@ func NewRouter(routers ...Router) *mux.Router {
 			handler = middleware.MaxBytes(handler)
 
 			router.
-				Methods(route.Method).
+				Methods(route.Method, "OPTIONS").
 				Path(route.Pattern).
 				Name(name).
 				Handler(handler)
