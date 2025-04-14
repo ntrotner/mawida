@@ -10,6 +10,8 @@ servers:
   - url: https://euw.backend.example.com/
     description: Prod server
 tags:
+  - name: administration
+    description: Perform administration actions
   - name: authentication
     description: Authenticate users
   - name: user
@@ -219,6 +221,24 @@ paths:
           $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
+    delete:
+      tags:
+        - product
+      summary: Delete a single product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: The ID of the product to delete
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '404':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
   /products/{productId}/rent:
     post:
       tags:
@@ -287,6 +307,27 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+  /administration/change-role/{userId}:
+    post:
+      tags:
+        - administration
+      summary: Change role of an user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The ID of the user to change the role for
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/ChangeRole'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '404':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
 security:
   - bearerAuth: []
@@ -424,6 +465,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ReturnProduct'
+    ChangeRole:
+      description: Change user role
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChangeRole'
   schemas:
     Success:
       type: object
@@ -736,3 +783,15 @@ components:
       required:
         - returnImages
         - additionalNotes
+    ChangeRole:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - admin
+            - user
+            - unverified
+          description: Role to change to
+      required:
+        - role

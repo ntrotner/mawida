@@ -12,6 +12,7 @@ package openapi
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	openapi "template_backend/open-api/authentication"
 	models "template_backend/open-api/models"
@@ -142,6 +143,23 @@ func (s *ProductAPIService) ProductsPost(ctx context.Context, product models.Pro
 	}
 
 	return models.Response(201, response), nil
+}
+
+// ProductsProductIdDelete - Delete a single product
+func (s *ProductAPIService) ProductsProductIdDelete(ctx context.Context, productId string) (models.ImplResponse, error) {
+	// TODO - update ProductsProductIdDelete with the required logic for this service method.
+	// Add api_product_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Success{}) or use other options such as http.Ok ...
+	// return Response(200, Success{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
+	// return Response(404, Error{}), nil
+
+	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
+	// return Response(401, Error{}), nil
+
+	return models.Response(http.StatusNotImplemented, nil), errors.New("ProductsProductIdDelete method not implemented")
 }
 
 // ProductsProductIdGet - Retrieve a single product

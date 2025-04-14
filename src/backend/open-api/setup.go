@@ -3,6 +3,7 @@ package openapi
 import (
 	"net/http"
 	config "template_backend/core/config"
+	administration "template_backend/open-api/handlers/administration"
 	authentication "template_backend/open-api/handlers/authentication"
 	core "template_backend/open-api/handlers/core"
 	location "template_backend/open-api/handlers/location"
@@ -15,6 +16,9 @@ import (
 )
 
 func SetupHttp() {
+	AdministrationAPIService := administration.NewAdministrationAPIService()
+	AdministrationAPIController := administration.NewAdministrationAPIController(AdministrationAPIService)
+
 	AuthenticationAPIService := authentication.NewAuthenticationAPIService()
 	AuthenticationAPIController := authentication.NewAuthenticationAPIController(AuthenticationAPIService)
 
@@ -34,6 +38,7 @@ func SetupHttp() {
 	RentalAPIController := rental.NewRentalAPIController(RentalAPIService)
 
 	router := runtime.NewRouter(
+		AdministrationAPIController,
 		AuthenticationAPIController,
 		StatusAPIController,
 		UserAPIController,

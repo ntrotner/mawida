@@ -29,6 +29,7 @@ import (
 type ProductAPIRouter interface {
 	ProductsGet(http.ResponseWriter, *http.Request)
 	ProductsPost(http.ResponseWriter, *http.Request)
+	ProductsProductIdDelete(http.ResponseWriter, *http.Request)
 	ProductsProductIdGet(http.ResponseWriter, *http.Request)
 	ProductsProductIdRentPost(http.ResponseWriter, *http.Request)
 }
@@ -40,6 +41,7 @@ type ProductAPIRouter interface {
 type ProductAPIServicer interface {
 	ProductsGet(context.Context, *http.Request) (models.ImplResponse, error)
 	ProductsPost(context.Context, models.Product, *http.Request) (models.ImplResponse, error)
+	ProductsProductIdDelete(context.Context, string) (models.ImplResponse, error)
 	ProductsProductIdGet(context.Context, string, *http.Request) (models.ImplResponse, error)
 	ProductsProductIdRentPost(context.Context, string, models.RentProductFormular, *http.Request) (models.ImplResponse, error)
 }
@@ -87,6 +89,11 @@ func (c *ProductAPIController) Routes() runtime.Routes {
 			Pattern:     "/products",
 			HandlerFunc: c.ProductsPost,
 		},
+		"ProductsProductIdDelete": runtime.Route{
+			Method:      strings.ToUpper("Delete"),
+			Pattern:     "/products/{productId}",
+			HandlerFunc: c.ProductsProductIdDelete,
+		},
 		"ProductsProductIdGet": runtime.Route{
 			Method:      strings.ToUpper("Get"),
 			Pattern:     "/products/{productId}",
@@ -130,6 +137,24 @@ func (c *ProductAPIController) ProductsPost(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	result, err := c.service.ProductsPost(r.Context(), productParam, r)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	runtime.EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// ProductsProductIdDelete - Delete a single product
+func (c *ProductAPIController) ProductsProductIdDelete(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	productIdParam := params["productId"]
+	if productIdParam == "" {
+		c.errorHandler(w, r, &models.RequiredError{Field: "productId"}, nil)
+		return
+	}
+	result, err := c.service.ProductsProductIdDelete(r.Context(), productIdParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
