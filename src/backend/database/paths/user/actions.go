@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	authentication "template_backend/infrastructure/authentication"
+	paymentTypes "template_backend/infrastructure/payment/types"
 
 	"github.com/go-kivik/kivik"
 	"github.com/google/uuid"
@@ -93,5 +94,19 @@ func ChangeUserPassword(ctx context.Context, id *string, newPassword *string) (*
 		return nil, errors.New("couldn't update user")
 	}
 
+	return user, nil
+}
+
+func UpdateUserForPayment(ctx context.Context, id *string, role *UserRole, customerIdentifier *paymentTypes.CustomerIdentifier) (*UserProfile, error) {
+	user := FindUserById(ctx, id)
+	if user == nil {
+		return nil, errors.New("couldn't find user")
+	}
+	user.Roles = *role
+	user.CustomerIdentifier = customerIdentifier
+	_, err := DatabaseUser.Put(ctx, user.ID, user, kivik.Options{"_rev": user.Rev})
+	if err != nil {
+		return nil, errors.New("couldn't update user")
+	}
 	return user, nil
 }

@@ -87,7 +87,7 @@ func (c *AdministrationAPIController) AdministrationChangeRoleUserIdPost(w http.
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.AdministrationChangeRoleUserIdPost(r.Context(), userIdParam, changeRoleParam)
+	result, err := c.service.AdministrationChangeRoleUserIdPost(r.Context(), userIdParam, changeRoleParam, r)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"template_backend/database"
+	payment "template_backend/infrastructure/payment"
 	openapi "template_backend/open-api"
 
 	"github.com/rs/zerolog/log"
@@ -18,5 +19,6 @@ func main() {
 	}()
 
 	database.Connect(ctx)
+	payment.InitStripe()
 	<-done
 }

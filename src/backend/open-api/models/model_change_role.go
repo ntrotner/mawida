@@ -10,10 +10,12 @@
 
 package openapi
 
+import validators "template_backend/infrastructure/validators"
+
 type ChangeRole struct {
 
 	// Role to change to
-	Role string `json:"role"`
+	Role string `json:"role" validate:"required,oneof=admin user temporary"`
 }
 
 // AssertChangeRoleRequired checks if the required fields are not zero-ed
@@ -32,5 +34,5 @@ func AssertChangeRoleRequired(obj ChangeRole) error {
 
 // AssertChangeRoleConstraints checks if the values respects the defined constraints
 func AssertChangeRoleConstraints(obj ChangeRole) error {
-	return nil
+	return validators.Validate.Struct(obj)
 }

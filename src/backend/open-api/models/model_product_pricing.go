@@ -16,10 +16,10 @@ import "template_backend/infrastructure/validators"
 type ProductPricing struct {
 
 	// Price of the product
-	Price float32 `json:"price" validate:"required,gte=0"`
+	Price int64 `json:"price" validate:"required,gte=0"`
 
 	// Deposit amount for the product
-	Deposit float32 `json:"deposit,omitempty" validate:"omitempty,gte=0"`
+	Deposit int64 `json:"deposit,omitempty" validate:"omitempty,gte=0"`
 }
 
 // AssertProductPricingRequired checks if the required fields are not zero-ed

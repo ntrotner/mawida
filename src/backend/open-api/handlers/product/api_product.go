@@ -41,7 +41,7 @@ type ProductAPIRouter interface {
 type ProductAPIServicer interface {
 	ProductsGet(context.Context, *http.Request) (models.ImplResponse, error)
 	ProductsPost(context.Context, models.Product, *http.Request) (models.ImplResponse, error)
-	ProductsProductIdDelete(context.Context, string) (models.ImplResponse, error)
+	ProductsProductIdDelete(context.Context, string, *http.Request) (models.ImplResponse, error)
 	ProductsProductIdGet(context.Context, string, *http.Request) (models.ImplResponse, error)
 	ProductsProductIdRentPost(context.Context, string, models.RentProductFormular, *http.Request) (models.ImplResponse, error)
 }
@@ -154,7 +154,7 @@ func (c *ProductAPIController) ProductsProductIdDelete(w http.ResponseWriter, r 
 		c.errorHandler(w, r, &models.RequiredError{Field: "productId"}, nil)
 		return
 	}
-	result, err := c.service.ProductsProductIdDelete(r.Context(), productIdParam)
+	result, err := c.service.ProductsProductIdDelete(r.Context(), productIdParam, r)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

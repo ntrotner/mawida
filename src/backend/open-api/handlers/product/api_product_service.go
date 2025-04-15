@@ -12,8 +12,10 @@ package openapi
 
 import (
 	"context"
-	"errors"
 	"net/http"
+	"template_backend/core/config"
+	"template_backend/infrastructure/payment"
+	paymentTypes "template_backend/infrastructure/payment/types"
 	openapi "template_backend/open-api/authentication"
 	models "template_backend/open-api/models"
 	"time"
@@ -23,6 +25,7 @@ import (
 	database_rent_contract "template_backend/database/paths/rent_contract"
 
 	"github.com/rs/zerolog/log"
+	"github.com/stripe/stripe-go/v82"
 )
 
 // ProductAPIService is a service that implements the logic for the ProductAPIServicer
@@ -40,38 +43,33 @@ func NewProductAPIService() ProductAPIServicer {
 func (s *ProductAPIService) ProductsGet(ctx context.Context, r *http.Request) (models.ImplResponse, error) {
 	user, _ := openapi.IsUserAuthorized(ctx, r)
 	admin, _ := openapi.IsAdmin(ctx, r)
+	products := database_product.GetAllProducts(ctx)
 
 	if admin == nil && user == nil {
-		sanitizedProducts := database_product.GetAllProducts(ctx)
-		for i := range sanitizedProducts {
-			database_product.SanitizeProduct(&sanitizedProducts[i])
+		for i := range products {
+			database_product.SanitizeProduct(&products[i])
 		}
-		return models.Response(200, sanitizedProducts), nil
 	}
 
 	if admin == nil && user != nil {
-		products := database_product.GetAllProducts(ctx)
 		for i := range products {
-			if products[i].RenterInfo != nil && products[i].RenterInfo.UserID != user.ID {
-				database_product.SanitizeProduct(&products[i])
-			} else {
-				renterInfo := products[i].RenterInfo
-				database_product.SanitizeProduct(&products[i])
+			renterInfo := products[i].RenterInfo
+			database_product.SanitizeProduct(&products[i])
+
+			if products[i].RenterInfo.UserID == user.ID {
 				products[i].RenterInfo = renterInfo
 			}
 		}
-		return models.Response(200, products), nil
 	}
 
-	products := database_product.GetAllProducts(ctx)
 	return models.Response(200, products), nil
 }
 
 // ProductsPost - Create a new product
 func (s *ProductAPIService) ProductsPost(ctx context.Context, product models.Product, r *http.Request) (models.ImplResponse, error) {
-	user, _ := openapi.IsAdmin(ctx, r)
-
-	if user == nil {
+	// Check admin authorization
+	admin, _ := openapi.IsAdmin(ctx, r)
+	if admin == nil {
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Forbidden. Admin access required."}}}), nil
 	}
 
@@ -84,7 +82,6 @@ func (s *ProductAPIService) ProductsPost(ctx context.Context, product models.Pro
 			Data: img.Data,
 		}
 	}
-
 	documents := make([]database_product.ProductDocument, len(product.Documents))
 	for i, doc := range product.Documents {
 		documents[i] = database_product.ProductDocument{
@@ -93,12 +90,57 @@ func (s *ProductAPIService) ProductsPost(ctx context.Context, product models.Pro
 			Data: doc.Data,
 		}
 	}
-
 	pricing := database_product.ProductPricing{
 		Price:   product.Pricing.Price,
 		Deposit: product.Pricing.Deposit,
 	}
 
+	// Create payment product
+	paymentProduct := payment.ProductData{
+		Name:        product.Name,
+		Description: product.Description,
+	}
+	createdPaymentProduct, err := payment.CreateProduct(paymentProduct)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create payment product")
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Failed to create product"}}}), nil
+	}
+
+	// Create payment price
+	paymentPrice := payment.PriceData{
+		Currency:   "eur",
+		UnitAmount: product.Pricing.Price,
+		Metadata: map[string]string{
+			"refundable": "false",
+		},
+	}
+	paymentDeposit := payment.PriceData{
+		Currency:   "eur",
+		UnitAmount: product.Pricing.Deposit,
+		Metadata: map[string]string{
+			"refundable": "true",
+		},
+	}
+	createdPaymentPrice, priceErr := payment.CreatePrice(createdPaymentProduct.ID, paymentPrice)
+	createdPaymentDeposit, depositErr := payment.CreatePrice(createdPaymentProduct.ID, paymentDeposit)
+	if priceErr != nil || depositErr != nil {
+		log.Error().Err(priceErr).Err(depositErr).Msg("Failed to create payment price or deposit")
+
+		_, deleteErr := payment.DeleteProduct(createdPaymentProduct.ID)
+		if deleteErr != nil {
+			log.Error().Err(deleteErr).Msg("Failed to delete payment product")
+		}
+
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Failed to create price"}}}), nil
+	}
+
+	// Create database product
+	productIdentifier := &paymentTypes.ProductIdentifier{
+		ID:        createdPaymentProduct.ID,
+		Mode:      "payment",
+		PriceID:   createdPaymentPrice.ID,
+		DepositID: createdPaymentDeposit.ID,
+	}
 	dbProduct := database_product.CreateProduct(
 		ctx,
 		product.Name,
@@ -107,13 +149,21 @@ func (s *ProductAPIService) ProductsPost(ctx context.Context, product models.Pro
 		pricing,
 		images,
 		documents,
+		productIdentifier,
 		product.DynamicAttributes,
 	)
 	if dbProduct == nil {
-		log.Error().Msg("Failed to create product")
-		return models.Response(400, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Failed to create product"}}}), nil
+		// Rollback payment product and price creation
+		_, deleteErr := payment.DeleteProduct(createdPaymentProduct.ID)
+		if deleteErr != nil {
+			log.Error().Err(deleteErr).Msg("Failed to rollback payment product creation after database product creation failure")
+		}
+
+		log.Error().Msg("Failed to create database product")
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Failed to create product in database"}}}), nil
 	}
 
+	// Build response
 	response := models.Product{
 		ID:          dbProduct.ID,
 		Name:        dbProduct.Name,
@@ -124,21 +174,23 @@ func (s *ProductAPIService) ProductsPost(ctx context.Context, product models.Pro
 			Deposit: dbProduct.Pricing.Deposit,
 		},
 		DynamicAttributes: dbProduct.DynamicAttributes,
-		Images:            make([]models.ProductImagesInner, len(dbProduct.Images)),
-		Documents:         make([]models.ProductDocumentsInner, len(dbProduct.Documents)),
+		Images:            []models.ProductImagesInner{},
+		Documents:         []models.ProductDocumentsInner{},
 	}
-	for _, img := range dbProduct.Images {
+
+	// Add images and documents to response
+	for i := range dbProduct.Images {
 		response.Images = append(response.Images, models.ProductImagesInner{
-			ID:   img.ID,
-			Name: img.Name,
-			Data: img.Data,
+			ID:   dbProduct.Images[i].ID,
+			Name: dbProduct.Images[i].Name,
+			Data: dbProduct.Images[i].Data,
 		})
 	}
-	for _, doc := range dbProduct.Documents {
+	for i := range dbProduct.Documents {
 		response.Documents = append(response.Documents, models.ProductDocumentsInner{
-			ID:   doc.ID,
-			Name: doc.Name,
-			Data: doc.Data,
+			ID:   dbProduct.Documents[i].ID,
+			Name: dbProduct.Documents[i].Name,
+			Data: dbProduct.Documents[i].Data,
 		})
 	}
 
@@ -146,55 +198,49 @@ func (s *ProductAPIService) ProductsPost(ctx context.Context, product models.Pro
 }
 
 // ProductsProductIdDelete - Delete a single product
-func (s *ProductAPIService) ProductsProductIdDelete(ctx context.Context, productId string) (models.ImplResponse, error) {
-	// TODO - update ProductsProductIdDelete with the required logic for this service method.
-	// Add api_product_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+func (s *ProductAPIService) ProductsProductIdDelete(ctx context.Context, productId string, r *http.Request) (models.ImplResponse, error) {
+	admin, _ := openapi.IsAdmin(ctx, r)
 
-	// TODO: Uncomment the next line to return response Response(200, Success{}) or use other options such as http.Ok ...
-	// return Response(200, Success{}), nil
+	if admin == nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Forbidden. Admin access required."}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
+	product := database_product.FindProductById(ctx, productId)
+	if product == nil {
+		return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "404", Message: "Product not found"}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
+	_, deleteErr := payment.DeleteProduct(product.ProductIdentifier.ID)
+	if deleteErr != nil {
+		log.Error().Err(deleteErr).Msg("Failed to delete payment product")
+	}
 
-	return models.Response(http.StatusNotImplemented, nil), errors.New("ProductsProductIdDelete method not implemented")
+	return models.Response(200, models.Success{}), nil
 }
 
 // ProductsProductIdGet - Retrieve a single product
 func (s *ProductAPIService) ProductsProductIdGet(ctx context.Context, productId string, r *http.Request) (models.ImplResponse, error) {
 	user, _ := openapi.IsUserAuthorized(ctx, r)
 	admin, _ := openapi.IsAdmin(ctx, r)
+	product := database_product.FindProductById(ctx, productId)
+
+	if product == nil {
+		return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "404", Message: "Product not found"}}}), nil
+	}
 
 	if admin == nil && user == nil {
-		sanitizedProduct := database_product.FindProductById(ctx, productId)
-		if sanitizedProduct == nil {
-			return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "404", Message: "Product not found"}}}), nil
-		}
-
-		database_product.SanitizeProduct(sanitizedProduct)
-		return models.Response(200, sanitizedProduct), nil
+		database_product.SanitizeProduct(product)
 	}
 
 	if admin == nil && user != nil {
-		product := database_product.FindProductById(ctx, productId)
-		if product == nil {
-			return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "404", Message: "Product not found"}}}), nil
-		}
+		renterInfo := product.RenterInfo
+		database_product.SanitizeProduct(product)
 
-		if product.RenterInfo != nil && product.RenterInfo.UserID != user.ID {
-			database_product.SanitizeProduct(product)
-		} else {
-			renterInfo := product.RenterInfo
-			database_product.SanitizeProduct(product)
+		if product.RenterInfo.UserID == user.ID {
 			product.RenterInfo = renterInfo
 		}
-
-		return models.Response(200, product), nil
 	}
 
-	product := database_product.FindProductById(ctx, productId)
 	return models.Response(200, product), nil
 }
 
@@ -214,23 +260,63 @@ func (s *ProductAPIService) ProductsProductIdRentPost(ctx context.Context, produ
 	// Check if location is available and exists for product
 	location := database_location.FindLocationById(ctx, rentProductFormular.LocationId)
 	if location == nil || product.Location != rentProductFormular.LocationId {
-		return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "404", Message: "Location not found"}}}), nil
+		return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "404", Message: "Location not found or invalid for this product"}}}), nil
 	}
 
 	// Only allow start date to be today
 	startDate := time.Unix(rentProductFormular.RentalStartDate, 0)
 	endDate := time.Unix(rentProductFormular.RentalEndDate, 0)
 	days := int(endDate.Sub(startDate).Hours() / 24)
+	if days <= 0 {
+		return models.Response(400, models.Error{ErrorMessages: []models.Message{{Code: "201", Message: "Rental end date must be after start date."}}}), nil
+	}
 	today := time.Now()
 	todayAtZero := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
 	tomorrow := todayAtZero.AddDate(0, 0, 1)
 	tomorrowAtZero := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
 	if !(startDate.After(todayAtZero) && startDate.Before(tomorrowAtZero)) {
-		return models.Response(400, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Start date cannot be in the past or in the future"}}}), nil
+		return models.Response(400, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Start date must be today."}}}), nil
+	}
+
+	// Payment Method Handling
+	var checkoutSession *paymentTypes.CheckoutSessionIdentifier
+	var stripeCheckoutSession *stripe.CheckoutSession
+	paymentMethod := rentProductFormular.PaymentMethodId
+	isCashPayment := (paymentMethod == models.CASH)
+
+	if !isCashPayment {
+		log.Info().Str("ProductID", product.ProductIdentifier.ID).Msg("Creating checkout session for online payment")
+		stripeCheckoutSession, err = payment.CreateCheckoutSession(payment.CheckoutSessionConfig{
+			CustomerID: user.CustomerIdentifier.ID,
+			SuccessURL: config.GlobalConfig.Stripe.SuccessURL + "?productId=" + productId + "&success=true",
+			CancelURL:  config.GlobalConfig.Stripe.CancelURL + "?productId=" + productId + "&success=false",
+			Mode:       product.ProductIdentifier.Mode,
+			Items: []payment.CheckoutItem{
+				{PriceID: product.ProductIdentifier.PriceID, Quantity: int64(days)},
+			},
+		})
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to create checkout session")
+			return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to initiate payment session"}}}), nil
+		}
+
+		checkoutSession = &paymentTypes.CheckoutSessionIdentifier{ID: stripeCheckoutSession.ID}
+		log.Info().Str("SessionID", checkoutSession.ID).Msg("Checkout session created")
+	} else {
+		log.Info().Msg("Processing cash payment, skipping Stripe checkout session creation")
 	}
 
 	// Calculate total amount
 	totalAmount := database_product.CalculateTotalAmount(product, days)
+
+	paymentInstruction := &database_rent_contract.PaymentInstruction{
+		PaymentMethodID:   database_rent_contract.PaymentMethod(rentProductFormular.PaymentMethodId),
+		DynamicAttributes: map[string]interface{}{},
+	}
+
+	if stripeCheckoutSession != nil && !isCashPayment {
+		paymentInstruction.DynamicAttributes["url"] = stripeCheckoutSession.URL
+	}
 
 	// Create rent contract
 	contract := database_rent_contract.CreateRentContract(
@@ -242,20 +328,31 @@ func (s *ProductAPIService) ProductsProductIdRentPost(ctx context.Context, produ
 		product.Pricing.Price,
 		product.Pricing.Deposit,
 		totalAmount,
-		rentProductFormular.PaymentMethodId,
+		string(rentProductFormular.PaymentMethodId),
 		rentProductFormular.LocationId,
 		rentProductFormular.LocationId,
 		rentProductFormular.AdditionalNotes,
+		checkoutSession,
 		rentProductFormular.DynamicAttributes,
+		paymentInstruction,
 	)
 
 	if contract == nil {
-		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to create rent contract"}}}), nil
-	}
+		log.Error().Msg("Failed to create rent contract in database")
+		if checkoutSession != nil {
+			_, deleteErr := payment.DeleteCheckoutSession(checkoutSession.ID)
+			if deleteErr != nil {
+				log.Error().Err(deleteErr).Str("SessionID", checkoutSession.ID).Msg("Failed to delete/rollback checkout session")
+			}
+		}
 
-	// Update product rental status
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "301", Message: "Failed to create rent contract"}}}), nil
+	}
+	log.Info().Str("ContractID", contract.ID).Msg("Rent contract created successfully")
+
+	// Update Product Rental Status
 	product.IsRented = true
-	product.RenterInfo = &database_product.RenterInfo{
+	product.RenterInfo = database_product.RenterInfo{
 		UserID:          user.ID,
 		RentalStartDate: rentProductFormular.RentalStartDate,
 		RentalEndDate:   rentProductFormular.RentalEndDate,
@@ -263,10 +360,25 @@ func (s *ProductAPIService) ProductsProductIdRentPost(ctx context.Context, produ
 
 	updatedProduct := database_product.UpdateProduct(ctx, product)
 	if updatedProduct == nil {
-		// Rollback rent contract creation
-		database_rent_contract.DeleteRentContract(ctx, contract.ID, contract.Rev)
-		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update product rental status"}}}), nil
+		log.Error().Str("ProductID", productId).Msg("Failed to update product rental status")
+
+		// Rollback: Delete Rent Contract
+		deleted := database_rent_contract.DeleteRentContract(ctx, contract.ID, contract.Rev)
+		if !deleted {
+			log.Error().Str("ContractID", contract.ID).Msg("Failed to rollback rent contract deletion")
+		}
+
+		// Rollback: Delete Checkout Session (if created)
+		if checkoutSession != nil {
+			_, deleteErr := payment.DeleteCheckoutSession(checkoutSession.ID)
+			if deleteErr != nil {
+				log.Error().Err(deleteErr).Str("SessionID", checkoutSession.ID).Msg("Failed to delete/rollback checkout session")
+			}
+		}
+
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "302", Message: "Failed to update product rental status"}}}), nil
 	}
+	log.Info().Str("ProductID", productId).Msg("Product rental status updated successfully")
 
 	response := models.RentProductConfirmation{
 		RentContractId: contract.ID,

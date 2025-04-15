@@ -7,6 +7,7 @@ import (
 	authentication "template_backend/open-api/handlers/authentication"
 	core "template_backend/open-api/handlers/core"
 	location "template_backend/open-api/handlers/location"
+	payment "template_backend/open-api/handlers/payment"
 	product "template_backend/open-api/handlers/product"
 	rental "template_backend/open-api/handlers/rental"
 	user "template_backend/open-api/handlers/user"
@@ -37,6 +38,9 @@ func SetupHttp() {
 	RentalAPIService := rental.NewRentalAPIService()
 	RentalAPIController := rental.NewRentalAPIController(RentalAPIService)
 
+	PaymentAPIService := payment.NewPaymentAPIService()
+	PaymentAPIController := payment.NewPaymentAPIController(PaymentAPIService)
+
 	router := runtime.NewRouter(
 		AdministrationAPIController,
 		AuthenticationAPIController,
@@ -45,6 +49,7 @@ func SetupHttp() {
 		LocationAPIController,
 		ProductAPIController,
 		RentalAPIController,
+		PaymentAPIController,
 	)
 	core.SetupPerformanceLogger(router)
 	core.SetupSwaggerUi(router)

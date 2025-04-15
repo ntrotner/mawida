@@ -4,8 +4,8 @@ package database_product
 // - Product's daily price
 // - Number of rental days
 // - Product's deposit amount (if any)
-func CalculateTotalAmount(product *Product, days int) float32 {
-	totalAmount := product.Pricing.Price * float32(days)
+func CalculateTotalAmount(product *Product, days int) int64 {
+	totalAmount := product.Pricing.Price * int64(days)
 	if product.Pricing.Deposit > 0 {
 		totalAmount += product.Pricing.Deposit
 	}

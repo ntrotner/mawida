@@ -38,6 +38,7 @@ func FindProductById(ctx context.Context, id string) *Product {
 		"dynamicAttributes",
 		"isRented",
 		"renterInfo",
+		"paymentIdentifier",
 	})
 	rows, err := DatabaseProduct.Find(ctx, query)
 	if err != nil {

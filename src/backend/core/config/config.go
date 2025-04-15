@@ -23,6 +23,7 @@ type Config struct {
 	Server      ServerConfig
 	Database    DatabaseConfig
 	Auth        AuthConfig
+	Stripe      StripeConfig
 }
 
 // ServerConfig holds all server related configuration
@@ -42,6 +43,13 @@ type DatabaseConfig struct {
 type AuthConfig struct {
 	JWTSecret              string
 	TokenExpirationMinutes int
+}
+
+type StripeConfig struct {
+	SecretKey     string
+	WebhookSecret string
+	SuccessURL    string
+	CancelURL     string
 }
 
 // Load loads all configuration from environment variables
@@ -72,6 +80,12 @@ func Load() {
 		Auth: AuthConfig{
 			JWTSecret:              getEnv("jwtKey", "test-secret"),
 			TokenExpirationMinutes: tokenExpiration,
+		},
+		Stripe: StripeConfig{
+			SecretKey:     getEnv("stripeSecretKey", ""),
+			WebhookSecret: getEnv("stripeWebhookSecret", ""),
+			SuccessURL:    getEnv("stripeSuccessURL", ""),
+			CancelURL:     getEnv("stripeCancelURL", ""),
 		},
 	}
 }

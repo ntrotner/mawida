@@ -12,9 +12,14 @@ package openapi
 
 import (
 	"context"
-	"errors"
 	"net/http"
+	database_user "template_backend/database/paths/user"
+	"template_backend/infrastructure/payment"
+	paymentTypes "template_backend/infrastructure/payment/types"
+	openapi "template_backend/open-api/authentication"
 	models "template_backend/open-api/models"
+
+	"github.com/rs/zerolog/log"
 )
 
 // AdministrationAPIServicer defines the api actions for the AdministrationAPI service
@@ -22,7 +27,7 @@ import (
 // while the service implementation can be ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type AdministrationAPIServicer interface {
-	AdministrationChangeRoleUserIdPost(context.Context, string, models.ChangeRole) (models.ImplResponse, error)
+	AdministrationChangeRoleUserIdPost(context.Context, string, models.ChangeRole, *http.Request) (models.ImplResponse, error)
 }
 
 // AdministrationAPIRouter defines the required methods for binding the api requests to a responses for the AdministrationAPI
@@ -44,18 +49,83 @@ func NewAdministrationAPIService() AdministrationAPIServicer {
 }
 
 // AdministrationChangeRoleUserIdPost - Change role of an user
-func (s *AdministrationAPIService) AdministrationChangeRoleUserIdPost(ctx context.Context, userId string, changeRole models.ChangeRole) (models.ImplResponse, error) {
-	// TODO - update AdministrationChangeRoleUserIdPost with the required logic for this service method.
-	// Add api_administration_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+func (s *AdministrationAPIService) AdministrationChangeRoleUserIdPost(ctx context.Context, userId string, changeRole models.ChangeRole, r *http.Request) (models.ImplResponse, error) {
+	admin, err := openapi.IsAdmin(ctx, r)
+	if err != nil || admin == nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized"}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(200, Success{}) or use other options such as http.Ok ...
-	// return Response(200, Success{}), nil
+	user := database_user.FindUserById(ctx, &userId)
+	if user == nil {
+		return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "101", Message: "User not found"}}}), nil
+	}
 
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
+	// Store previous state for rollback
+	previousRole := user.Roles
+	nextRoles := database_user.RoleMapping(changeRole.Role)
 
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
+	if previousRole == database_user.ConfirmedUser && nextRoles == database_user.TemporaryUser {
+		_, err = database_user.UpdateUserForPayment(ctx, &userId, &nextRoles, nil)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to update user role")
+			return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update user role"}}}), nil
+		}
 
-	return models.Response(http.StatusNotImplemented, nil), errors.New("AdministrationChangeRoleUserIdPost method not implemented")
+		// Then delete customer
+		if user.CustomerIdentifier != nil && user.CustomerIdentifier.ID != "" {
+			_, err := payment.DeleteCustomer(user.CustomerIdentifier.ID)
+			if err != nil {
+				// Rollback user role
+				log.Error().Err(err).Msg("Failed to delete customer")
+				_, rollbackErr := database_user.UpdateUserForPayment(ctx, &userId, &previousRole, user.CustomerIdentifier)
+				if rollbackErr != nil {
+					log.Error().Err(rollbackErr).Msg("Failed to rollback user role after payment deletion failure")
+				}
+
+				return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to delete customer"}}}), nil
+			}
+		}
+
+		return models.Response(200, models.Success{}), nil
+	}
+
+	// Handle role change from TemporaryUser to ConfirmedUser
+	if previousRole == database_user.TemporaryUser && nextRoles == database_user.ConfirmedUser {
+		customerData := payment.CustomerData{
+			Email: user.Email,
+			Name:  user.Email,
+		}
+		customer, err := payment.CreateCustomer(customerData)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to create customer")
+			return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to create customer"}}}), nil
+		}
+
+		customerIdentifier := paymentTypes.CustomerIdentifier{
+			ID: customer.ID,
+		}
+		_, err = database_user.UpdateUserForPayment(ctx, &userId, &nextRoles, &customerIdentifier)
+		if err != nil {
+			// Rollback customer creation
+			if customer != nil {
+				_, deleteErr := payment.DeleteCustomer(customer.ID)
+				if deleteErr != nil {
+					log.Error().Err(deleteErr).Msg("Failed to rollback customer creation")
+				}
+			}
+			log.Error().Err(err).Msg("Failed to enable user for payment")
+			return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to enable user for payment"}}}), nil
+		}
+
+		return models.Response(200, models.Success{}), nil
+	}
+
+	// Handle other role changes
+	_, err = database_user.UpdateUserForPayment(ctx, &userId, &nextRoles, user.CustomerIdentifier)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to update user role")
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update user role"}}}), nil
+	}
+
+	return models.Response(200, models.Success{}), nil
 }

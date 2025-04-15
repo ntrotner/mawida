@@ -31,7 +31,7 @@ type Product struct {
 	// Location ID of the product
 	Location string `json:"location" validate:"required"`
 
-	Pricing ProductPricing `json:"pricing" validate:"required"`
+	Pricing ProductPricing `json:"pricing" validate:"required,dive"`
 
 	// Dynamic attributes for the product
 	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty" validate:"omitempty"`
