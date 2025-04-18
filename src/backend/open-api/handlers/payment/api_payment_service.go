@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 
+	"template_backend/core/config"
+	database_payments "template_backend/database/paths/payments"
 	database_rent_contract "template_backend/database/paths/rent_contract"
 	models "template_backend/open-api/models"
 
@@ -45,7 +46,7 @@ func (s *PaymentAPIService) Webhook(ctx context.Context, r *http.Request) (model
 	}
 
 	// Get the webhook signing secret
-	webhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
+	webhookSecret := config.GlobalConfig.Stripe.WebhookSecret
 	if webhookSecret == "" {
 		log.Warn().Msg("STRIPE_WEBHOOK_SECRET is not set, webhook signature verification will be skipped")
 	}
@@ -78,6 +79,17 @@ func (s *PaymentAPIService) Webhook(ctx context.Context, r *http.Request) (model
 		contract := database_rent_contract.UpdateRentContractStatusFromCheckoutSession(ctx, data.ID, database_rent_contract.RentContractStatusActive)
 		if contract == nil {
 			log.Error().Msg("Failed to update rent contract status")
+		}
+
+		paymentTransactionId, ok := data.Metadata["paymentTransactionID"]
+		if !ok {
+			log.Error().Msg("Payment transaction ID not found in metadata")
+			return models.Response(400, models.Error{ErrorMessages: []models.Message{{Code: "400", Message: "Payment transaction ID not found in metadata"}}}), nil
+		}
+
+		_, err = database_payments.CompletePaymentTransaction(ctx, paymentTransactionId)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to complete payment transaction")
 		}
 	}
 

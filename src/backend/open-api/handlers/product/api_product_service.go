@@ -13,6 +13,7 @@ package openapi
 import (
 	"context"
 	"net/http"
+	"strings"
 	"template_backend/core/config"
 	"template_backend/infrastructure/payment"
 	paymentTypes "template_backend/infrastructure/payment/types"
@@ -21,6 +22,7 @@ import (
 	"time"
 
 	database_location "template_backend/database/paths/location"
+	database_payments "template_backend/database/paths/payments"
 	database_product "template_backend/database/paths/product"
 	database_rent_contract "template_backend/database/paths/rent_contract"
 
@@ -105,7 +107,6 @@ func (s *ProductAPIService) ProductsPost(ctx context.Context, product models.Pro
 		log.Error().Err(err).Msg("Failed to create payment product")
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Failed to create product"}}}), nil
 	}
-
 	// Create payment price
 	paymentPrice := payment.PriceData{
 		Currency:   "eur",
@@ -114,6 +115,32 @@ func (s *ProductAPIService) ProductsPost(ctx context.Context, product models.Pro
 			"refundable": "false",
 		},
 	}
+	createdPaymentPrice, priceErr := payment.CreatePrice(createdPaymentProduct.ID, paymentPrice)
+	if priceErr != nil {
+		log.Error().Err(priceErr).Msg("Failed to create payment price")
+
+		_, deleteErr := payment.DeleteProduct(createdPaymentProduct.ID)
+		if deleteErr != nil {
+			log.Error().Err(deleteErr).Msg("Failed to delete payment product")
+		}
+
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Failed to create price"}}}), nil
+	}
+
+	depositProduct := payment.ProductData{
+		Name:        strings.Join([]string{product.Name, "Deposit"}, " - "),
+		Description: "Deposit",
+	}
+	createdDepositProduct, err := payment.CreateProduct(depositProduct)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create deposit product")
+		_, deleteErr := payment.DeleteProduct(createdPaymentProduct.ID)
+		if deleteErr != nil {
+			log.Error().Err(deleteErr).Msg("Failed to delete payment product")
+		}
+
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Failed to create product"}}}), nil
+	}
 	paymentDeposit := payment.PriceData{
 		Currency:   "eur",
 		UnitAmount: product.Pricing.Deposit,
@@ -121,14 +148,18 @@ func (s *ProductAPIService) ProductsPost(ctx context.Context, product models.Pro
 			"refundable": "true",
 		},
 	}
-	createdPaymentPrice, priceErr := payment.CreatePrice(createdPaymentProduct.ID, paymentPrice)
-	createdPaymentDeposit, depositErr := payment.CreatePrice(createdPaymentProduct.ID, paymentDeposit)
-	if priceErr != nil || depositErr != nil {
-		log.Error().Err(priceErr).Err(depositErr).Msg("Failed to create payment price or deposit")
+	createdPaymentDeposit, depositErr := payment.CreatePrice(createdDepositProduct.ID, paymentDeposit)
+	if depositErr != nil {
+		log.Error().Err(depositErr).Msg("Failed to create payment price or deposit")
 
 		_, deleteErr := payment.DeleteProduct(createdPaymentProduct.ID)
 		if deleteErr != nil {
 			log.Error().Err(deleteErr).Msg("Failed to delete payment product")
+		}
+
+		_, deleteErr = payment.DeleteProduct(createdDepositProduct.ID)
+		if deleteErr != nil {
+			log.Error().Err(deleteErr).Msg("Failed to delete deposit product")
 		}
 
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Failed to create price"}}}), nil
@@ -215,6 +246,11 @@ func (s *ProductAPIService) ProductsProductIdDelete(ctx context.Context, product
 		log.Error().Err(deleteErr).Msg("Failed to delete payment product")
 	}
 
+	_, deleteErr = payment.DeleteProduct(product.ProductIdentifier.DepositID)
+	if deleteErr != nil {
+		log.Error().Err(deleteErr).Msg("Failed to delete deposit product")
+	}
+
 	return models.Response(200, models.Success{}), nil
 }
 
@@ -278,6 +314,12 @@ func (s *ProductAPIService) ProductsProductIdRentPost(ctx context.Context, produ
 		return models.Response(400, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Start date must be today."}}}), nil
 	}
 
+	paymentTransaction, err := database_payments.InitializePaymentTransaction(ctx, user.CustomerIdentifier.ID, product.ProductIdentifier.ID, product.Pricing.Price, product.Pricing.Deposit, product.ProductIdentifier.Mode)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to initialize payment transaction")
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to initiate payment session"}}}), nil
+	}
+
 	// Payment Method Handling
 	var checkoutSession *paymentTypes.CheckoutSessionIdentifier
 	var stripeCheckoutSession *stripe.CheckoutSession
@@ -285,6 +327,7 @@ func (s *ProductAPIService) ProductsProductIdRentPost(ctx context.Context, produ
 	isCashPayment := (paymentMethod == models.CASH)
 
 	if !isCashPayment {
+		log.Info().Interface("ProductIdentifier", product.ProductIdentifier).Msg("Product identifier")
 		log.Info().Str("ProductID", product.ProductIdentifier.ID).Msg("Creating checkout session for online payment")
 		stripeCheckoutSession, err = payment.CreateCheckoutSession(payment.CheckoutSessionConfig{
 			CustomerID: user.CustomerIdentifier.ID,
@@ -293,6 +336,10 @@ func (s *ProductAPIService) ProductsProductIdRentPost(ctx context.Context, produ
 			Mode:       product.ProductIdentifier.Mode,
 			Items: []payment.CheckoutItem{
 				{PriceID: product.ProductIdentifier.PriceID, Quantity: int64(days)},
+				{PriceID: product.ProductIdentifier.DepositID, Quantity: 1},
+			},
+			Metadata: map[string]string{
+				"paymentTransactionID": paymentTransaction.ID,
 			},
 		})
 		if err != nil {

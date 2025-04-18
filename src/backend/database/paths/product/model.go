@@ -5,18 +5,18 @@ import (
 )
 
 type Product struct {
-	ID                string                          `json:"_id,omitempty"`
-	Rev               string                          `json:"_rev,omitempty"`
-	Name              string                          `json:"name"`
-	Description       string                          `json:"description"`
-	Images            []ProductImage                  `json:"images,omitempty"`
-	Documents         []ProductDocument               `json:"documents,omitempty"`
-	Location          string                          `json:"location"`
-	Pricing           ProductPricing                  `json:"pricing"`
-	DynamicAttributes map[string]interface{}          `json:"dynamicAttributes,omitempty"`
-	IsRented          bool                            `json:"isRented,omitempty"`
-	RenterInfo        RenterInfo                      `json:"renterInfo,omitempty"`
-	ProductIdentifier *paymentTypes.ProductIdentifier `json:"productIdentifier,omitempty"`
+	ID                string                         `json:"_id,omitempty"`
+	Rev               string                         `json:"_rev,omitempty"`
+	Name              string                         `json:"name"`
+	Description       string                         `json:"description"`
+	Images            []ProductImage                 `json:"images,omitempty"`
+	Documents         []ProductDocument              `json:"documents,omitempty"`
+	Location          string                         `json:"location"`
+	Pricing           ProductPricing                 `json:"pricing"`
+	DynamicAttributes map[string]interface{}         `json:"dynamicAttributes,omitempty"`
+	IsRented          bool                           `json:"isRented,omitempty"`
+	RenterInfo        RenterInfo                     `json:"renterInfo,omitempty"`
+	ProductIdentifier paymentTypes.ProductIdentifier `json:"productIdentifier,omitempty"`
 }
 
 type ProductImage struct {

@@ -24,7 +24,7 @@ func CreateProduct(ctx context.Context, name string, description string, locatio
 		DynamicAttributes: dynamicAttributes,
 		IsRented:          false,
 		RenterInfo:        RenterInfo{},
-		ProductIdentifier: productIdentifier,
+		ProductIdentifier: *productIdentifier,
 	}
 
 	_, err := DatabaseProduct.Put(ctx, product.ID, product)

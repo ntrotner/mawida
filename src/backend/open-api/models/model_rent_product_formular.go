@@ -38,7 +38,6 @@ func AssertRentProductFormularRequired(obj RentProductFormular) error {
 	elements := map[string]interface{}{
 		"rentalStartDate": obj.RentalStartDate,
 		"rentalEndDate":   obj.RentalEndDate,
-		"additionalNotes": obj.AdditionalNotes,
 		"locationId":      obj.LocationId,
 		"paymentMethodId": obj.PaymentMethodId,
 	}

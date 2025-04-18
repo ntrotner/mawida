@@ -23,15 +23,15 @@ type Product struct {
 	Description string `json:"description" validate:"required,min=10,max=1000"`
 
 	// List of base64 encoded image data with IDs and names
-	Images []ProductImagesInner `json:"images,omitempty" validate:"omitempty,dive"`
+	Images []ProductImagesInner `json:"images,omitempty" validate:"omitempty"`
 
 	// List of base64 encoded document data with IDs and names
-	Documents []ProductDocumentsInner `json:"documents,omitempty" validate:"omitempty,dive"`
+	Documents []ProductDocumentsInner `json:"documents,omitempty" validate:"omitempty"`
 
 	// Location ID of the product
 	Location string `json:"location" validate:"required"`
 
-	Pricing ProductPricing `json:"pricing" validate:"required,dive"`
+	Pricing ProductPricing `json:"pricing" validate:"required"`
 
 	// Dynamic attributes for the product
 	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty" validate:"omitempty"`

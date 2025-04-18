@@ -39,7 +39,6 @@ func (s *RentalAPIService) RentalsGet(ctx context.Context, r *http.Request) (mod
 	user, userErr := openapi.IsUserAuthorized(ctx, r)
 	admin, adminErr := openapi.IsAdmin(ctx, r)
 	if userErr != nil || adminErr != nil {
-		log.Error().Msg(userErr.Error())
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. Please check your credentials"}}}), nil
 	}
 
@@ -78,7 +77,6 @@ func (s *RentalAPIService) RentalsRentContractIdCancelPost(ctx context.Context, 
 	user, userErr := openapi.IsUserAuthorized(ctx, r)
 	admin, adminErr := openapi.IsAdmin(ctx, r)
 	if userErr != nil || adminErr != nil {
-		log.Error().Msg(userErr.Error())
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
 	}
 
@@ -128,8 +126,7 @@ func (s *RentalAPIService) RentalsRentContractIdCancelPost(ctx context.Context, 
 func (s *RentalAPIService) RentalsRentContractIdGet(ctx context.Context, rentContractId string, r *http.Request) (models.ImplResponse, error) {
 	user, userErr := openapi.IsUserAuthorized(ctx, r)
 	admin, adminErr := openapi.IsAdmin(ctx, r)
-	if userErr != nil || adminErr != nil {
-		log.Error().Msg(userErr.Error())
+	if userErr != nil && adminErr != nil {
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
 	}
 
@@ -169,8 +166,7 @@ func (s *RentalAPIService) RentalsRentContractIdPickupPost(ctx context.Context, 
 	// Verify user authorization
 	user, userErr := openapi.IsUserAuthorized(ctx, r)
 	admin, adminErr := openapi.IsAdmin(ctx, r)
-	if userErr != nil || adminErr != nil {
-		log.Error().Msg(userErr.Error())
+	if userErr != nil && adminErr != nil {
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
 	}
 
@@ -212,8 +208,7 @@ func (s *RentalAPIService) RentalsRentContractIdReturnPost(ctx context.Context, 
 	// Verify user authorization
 	user, userErr := openapi.IsUserAuthorized(ctx, r)
 	admin, adminErr := openapi.IsAdmin(ctx, r)
-	if userErr != nil || adminErr != nil {
-		log.Error().Msg(userErr.Error())
+	if userErr != nil && adminErr != nil {
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
 	}
 
