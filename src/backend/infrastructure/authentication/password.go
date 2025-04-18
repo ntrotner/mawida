@@ -2,6 +2,7 @@ package authentication
 
 import (
 	"math/rand"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -19,10 +20,23 @@ func checkPasswordHash(password *string, hash *string) bool {
 	return err == nil
 }
 
+// createPasswordSalt generates a pseudo-random salt
+func createPasswordSalt(length int) string {
+	accumulatedSalt := []string{}
+
+	for len(accumulatedSalt) <= length {
+		r := rand.New(rand.NewSource(time.Now().Local().UnixMilli() + int64(len(accumulatedSalt))))
+		salt := string(byte(r.Uint32()))
+
+		accumulatedSalt = append(accumulatedSalt, salt)
+	}
+
+	return strings.Join(accumulatedSalt, "")
+}
+
 // CreatePassword creates a password
 func CreatePassword(password *string) (string, string, error) {
-	r := rand.New(rand.NewSource(time.Now().Local().UnixMilli()))
-	salt := string(byte(r.Uint32()))
+	salt := createPasswordSalt(20)
 	hash, err := hashPassword(*password + salt)
 
 	return hash, salt, err
