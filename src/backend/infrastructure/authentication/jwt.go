@@ -24,7 +24,6 @@ func CreateJWT(userId *string) (string, time.Time, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, content)
-	log.Info().Msgf("Signing JWT with secret: %s", config.GlobalConfig.Auth.JWTSecret)
 	signedJWT, err := token.SignedString([]byte(config.GlobalConfig.Auth.JWTSecret))
 
 	return signedJWT, expirationTime, err
@@ -41,8 +40,9 @@ func VerifyJWT(jwtString *string) (*jwt.Token, *JWTContent, error) {
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
 			log.Error().Int("status", http.StatusUnauthorized).Msg("verify JWT")
+		} else {
+			log.Error().Int("status", http.StatusBadRequest).Msg("verify JWT")
 		}
-		log.Error().Int("status", http.StatusBadRequest).Msg("verify JWT")
 	}
 	if !token.Valid {
 		log.Error().Int("status", http.StatusUnauthorized).Msg("tampered JWT")

@@ -13,20 +13,21 @@ package openapi
 import "template_backend/infrastructure/validators"
 
 type RentProductFormular struct {
+
 	// The start date of the rental period
-	RentalStartDate int64 `json:"rentalStartDate" validate:"required"`
+	RentalStartDate int64 `json:"rentalStartDate" validate:"required,gte=0"`
 
 	// The end date of the rental period
-	RentalEndDate int64 `json:"rentalEndDate" validate:"required"`
+	RentalEndDate int64 `json:"rentalEndDate" validate:"required,gtefield=RentalStartDate"`
 
 	// Free text for additional notes or special instructions
-	AdditionalNotes string `json:"additionalNotes,omitempty" validate:"omitempty,max=1000"`
+	AdditionalNotes string `json:"additionalNotes,omitempty" validate:"min=0,max=1000"`
 
 	// Identifier for the location where the product will be picked up
 	LocationId string `json:"locationId" validate:"required"`
 
-	// Identifier for the payment method used for the rental
-	PaymentMethodId string `json:"paymentMethodId" validate:"required"`
+	// Identifier for the payment method
+	PaymentMethodId PaymentMethod `json:"paymentMethodId" validate:"required,oneof=cash stripe"`
 
 	// Dynamic attributes for the rental request
 	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty"`

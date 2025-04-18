@@ -27,6 +27,9 @@ import (
 // The RentalAPIRouter implementation should parse necessary information from the http request,
 // pass the data to a RentalAPIServicer to perform the required actions, then write the service results to the http response.
 type RentalAPIRouter interface {
+	RentalsGet(http.ResponseWriter, *http.Request)
+	RentalsRentContractIdCancelPost(http.ResponseWriter, *http.Request)
+	RentalsRentContractIdGet(http.ResponseWriter, *http.Request)
 	RentalsRentContractIdPickupPost(http.ResponseWriter, *http.Request)
 	RentalsRentContractIdReturnPost(http.ResponseWriter, *http.Request)
 }
@@ -36,6 +39,9 @@ type RentalAPIRouter interface {
 // while the service implementation can be ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type RentalAPIServicer interface {
+	RentalsGet(context.Context, *http.Request) (models.ImplResponse, error)
+	RentalsRentContractIdCancelPost(context.Context, string, *http.Request) (models.ImplResponse, error)
+	RentalsRentContractIdGet(context.Context, string, *http.Request) (models.ImplResponse, error)
 	RentalsRentContractIdPickupPost(context.Context, string, models.PickupConfirmation, *http.Request) (models.ImplResponse, error)
 	RentalsRentContractIdReturnPost(context.Context, string, models.ReturnProduct, *http.Request) (models.ImplResponse, error)
 }
@@ -73,6 +79,21 @@ func NewRentalAPIController(s RentalAPIServicer, opts ...RentalAPIOption) runtim
 // Routes returns all the api routes for the RentalAPIController
 func (c *RentalAPIController) Routes() runtime.Routes {
 	return runtime.Routes{
+		"RentalsGet": runtime.Route{
+			Method:      strings.ToUpper("Get"),
+			Pattern:     "/rentals",
+			HandlerFunc: c.RentalsGet,
+		},
+		"RentalsRentContractIdCancelPost": runtime.Route{
+			Method:      strings.ToUpper("Post"),
+			Pattern:     "/rentals/{rentContractId}/cancel",
+			HandlerFunc: c.RentalsRentContractIdCancelPost,
+		},
+		"RentalsRentContractIdGet": runtime.Route{
+			Method:      strings.ToUpper("Get"),
+			Pattern:     "/rentals/{rentContractId}",
+			HandlerFunc: c.RentalsRentContractIdGet,
+		},
 		"RentalsRentContractIdPickupPost": runtime.Route{
 			Method:      strings.ToUpper("Post"),
 			Pattern:     "/rentals/{rentContractId}/pickup",
@@ -84,6 +105,54 @@ func (c *RentalAPIController) Routes() runtime.Routes {
 			HandlerFunc: c.RentalsRentContractIdReturnPost,
 		},
 	}
+}
+
+// RentalsGet - Retrieve all rent contracts
+func (c *RentalAPIController) RentalsGet(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.RentalsGet(r.Context(), r)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	runtime.EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// RentalsRentContractIdCancelPost - Cancel a rent contract
+func (c *RentalAPIController) RentalsRentContractIdCancelPost(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	rentContractIdParam := params["rentContractId"]
+	if rentContractIdParam == "" {
+		c.errorHandler(w, r, &models.RequiredError{Field: "rentContractId"}, nil)
+		return
+	}
+	result, err := c.service.RentalsRentContractIdCancelPost(r.Context(), rentContractIdParam, r)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	runtime.EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// RentalsRentContractIdGet - Retrieve a single rent contract
+func (c *RentalAPIController) RentalsRentContractIdGet(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	rentContractIdParam := params["rentContractId"]
+	if rentContractIdParam == "" {
+		c.errorHandler(w, r, &models.RequiredError{Field: "rentContractId"}, nil)
+		return
+	}
+	result, err := c.service.RentalsRentContractIdGet(r.Context(), rentContractIdParam, r)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	runtime.EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 // RentalsRentContractIdPickupPost - Confirm product pickup

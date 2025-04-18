@@ -10,6 +10,8 @@ servers:
   - url: https://euw.backend.example.com/
     description: Prod server
 tags:
+  - name: administration
+    description: Perform administration actions
   - name: authentication
     description: Authenticate users
   - name: user
@@ -219,6 +221,24 @@ paths:
           $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Error'
+    delete:
+      tags:
+        - product
+      summary: Delete a single product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: The ID of the product to delete
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '404':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
   /products/{productId}/rent:
     post:
       tags:
@@ -241,6 +261,37 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+  /rentals:
+    get:
+      tags:
+        - rental
+      summary: Retrieve all rent contracts
+      responses:
+        '200':
+          $ref: '#/components/responses/RentContractList'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+  /rentals/{rentContractId}:
+    get:
+      tags:
+        - rental
+      summary: Retrieve a single rent contract
+      parameters:
+        - name: rentContractId
+          in: path
+          required: true
+          description: The ID of the rent contract
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/RentContract'
+        '404':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
   /rentals/{rentContractId}/pickup:
     post:
@@ -287,6 +338,46 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '404':
+          $ref: '#/components/responses/Error'
+  /rentals/{rentContractId}/cancel:
+    post:
+      tags:
+        - rental
+      summary: Cancel a rent contract
+      parameters:
+        - name: rentContractId
+          in: path
+          required: true
+          description: The ID of the rent contract
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+  /administration/change-role/{userId}:
+    post:
+      tags:
+        - administration
+      summary: Change role of an user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The ID of the user to change the role for
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/ChangeRole'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '404':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
 security:
   - bearerAuth: []
@@ -363,6 +454,20 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/RentProductConfirmation'
+    RentContractList:
+      description: List of rent contracts
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/RentContract'
+    RentContract:
+      description: Rent contract details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RentContract'
   requestBodies:
     UserRegistration:
       description: User registration
@@ -424,6 +529,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ReturnProduct'
+    ChangeRole:
+      description: Change user role
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChangeRole'
   schemas:
     Success:
       type: object
@@ -591,11 +702,11 @@ components:
           properties:
             price:
               type: number
-              format: float
+              format: int64
               description: Price of the product
             deposit:
               type: number
-              format: float
+              format: int64
               description: Deposit amount for the product
           required:
             - price
@@ -693,8 +804,7 @@ components:
           type: string
           description: Identifier for the location where the product will be picked up
         paymentMethodId:
-          type: string
-          description: Identifier for the payment method used for the rental
+          $ref: '#/components/schemas/PaymentMethod'
         dynamicAttributes:
           type: object
           additionalProperties: true
@@ -736,3 +846,83 @@ components:
       required:
         - returnImages
         - additionalNotes
+    ChangeRole:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - admin
+            - user
+            - unverified
+          description: Role to change to
+      required:
+        - role
+    PaymentMethod:
+      type: string
+      description: Unique identifier for the payment method
+      enum:
+        - cash
+        - stripe
+    RentContractStatus:
+      type: string
+      description: Status of the rent contract
+      enum:
+        - pickupPending
+        - confirmed
+        - active
+        - completed
+        - cancelled
+    PaymentInstructions:
+      type: object
+      properties:
+        paymentMethodId:
+          $ref: '#/components/schemas/PaymentMethod'
+        dynamicAttributes:
+          type: object
+          additionalProperties: true
+          description: Dynamic attributes for the payment instructions
+      required:
+        - paymentMethodId
+    RentContract:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the rent contract
+        productId:
+          type: string
+          description: Unique identifier for the product
+        userId:
+          type: string
+          description: Unique identifier for the user
+        paymentInstructions:
+          $ref: '#/components/schemas/PaymentInstructions'
+        rentalStartDate:
+          type: integer
+          format: int64
+          description: Unix timestamp for the start date of the rental period
+        rentalEndDate:
+          type: integer
+          format: int64
+          description: Unix timestamp for the end date of the rental period
+        status:
+          $ref: '#/components/schemas/RentContractStatus'
+        price:
+          type: number
+          format: int64
+          description: Price of the rent contract
+        deposit:
+          type: number
+          format: int64
+          description: Deposit amount for the rent contract
+        totalAmount:
+          type: number
+          format: int64
+          description: Total amount of the rent contract
+        pickupLocationId:
+          type: string
+          description: Unique identifier for the pickup location
+        returnLocationId:
+          type: string
+          description: Unique identifier for the return location

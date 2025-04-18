@@ -56,6 +56,7 @@ services:
       - ./environment/global.env
     depends_on:
       - mawida_database
+      - mawida_ui
     profiles:
       - local
       - deployment
@@ -69,9 +70,6 @@ services:
       - app_env=${docker_env}
     env_file:
       - ./environment/global.env
-    logging:
-      driver: none
-    attach: false
     volumes:
         - ./dockerfiles/db:/opt/couchdb/data
     networks:

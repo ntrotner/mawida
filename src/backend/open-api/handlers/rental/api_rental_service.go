@@ -13,6 +13,7 @@ package openapi
 import (
 	"context"
 	"net/http"
+	"template_backend/infrastructure/payment"
 	openapi "template_backend/open-api/authentication"
 	models "template_backend/open-api/models"
 
@@ -33,12 +34,139 @@ func NewRentalAPIService() RentalAPIServicer {
 	return &RentalAPIService{}
 }
 
+// RentalsGet - Retrieve all rent contracts
+func (s *RentalAPIService) RentalsGet(ctx context.Context, r *http.Request) (models.ImplResponse, error) {
+	user, userErr := openapi.IsUserAuthorized(ctx, r)
+	admin, adminErr := openapi.IsAdmin(ctx, r)
+	if userErr != nil || adminErr != nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. Please check your credentials"}}}), nil
+	}
+
+	rentContracts := database_rent_contract.FindAllRentContracts(ctx)
+	response := make([]models.RentContract, 0)
+	for _, contract := range rentContracts {
+		if admin == nil && contract.UserID != user.ID {
+			continue
+		}
+
+		paymentInstruction := models.PaymentInstructions{
+			PaymentMethodId:   models.PaymentMethod(contract.PaymentInstruction.PaymentMethodID),
+			DynamicAttributes: contract.PaymentInstruction.DynamicAttributes,
+		}
+		response = append(response, models.RentContract{
+			Id:                  contract.ID,
+			UserId:              contract.UserID,
+			ProductId:           contract.ProductID,
+			RentalStartDate:     contract.RentalStartDate,
+			RentalEndDate:       contract.RentalEndDate,
+			Status:              models.RentContractStatus(contract.Status),
+			Price:               contract.Price,
+			Deposit:             contract.Deposit,
+			TotalAmount:         contract.TotalAmount,
+			PickupLocationId:    contract.PickupLocationID,
+			ReturnLocationId:    contract.ReturnLocationID,
+			PaymentInstructions: paymentInstruction,
+		})
+	}
+
+	return models.Response(200, response), nil
+}
+
+// RentalsRentContractIdCancelPost - Cancel a rent contract
+func (s *RentalAPIService) RentalsRentContractIdCancelPost(ctx context.Context, rentContractId string, r *http.Request) (models.ImplResponse, error) {
+	user, userErr := openapi.IsUserAuthorized(ctx, r)
+	admin, adminErr := openapi.IsAdmin(ctx, r)
+	if userErr != nil || adminErr != nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
+	}
+
+	contract := database_rent_contract.FindRentContractById(ctx, rentContractId)
+	if contract == nil {
+		return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "404", Message: "Rent contract not found"}}}), nil
+	}
+
+	if admin == nil && contract.UserID != user.ID {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. This contract belongs to another user."}}}), nil
+	}
+
+	if contract.Status == database_rent_contract.RentContractStatusActive ||
+		contract.Status == database_rent_contract.RentContractStatusCompleted ||
+		contract.Status == database_rent_contract.RentContractStatusCancelled {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Invalid contract status. Contract must be in pending or confirmed status."}}}), nil
+	}
+
+	_, err := payment.DeleteCheckoutSession(contract.PaymentIdentifier.ID)
+	if err != nil {
+		log.Error().Msg(err.Error())
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to delete checkout session"}}}), nil
+	}
+
+	contract.Status = database_rent_contract.RentContractStatusCancelled
+	updatedContract := database_rent_contract.UpdateRentContract(ctx, contract)
+	if updatedContract == nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update rent contract"}}}), nil
+	}
+
+	product := database_product.FindProductById(ctx, contract.ProductID)
+	if product == nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to find product"}}}), nil
+	}
+
+	product.IsRented = false
+	product.RenterInfo = database_product.RenterInfo{}
+	updatedProduct := database_product.UpdateProduct(ctx, product)
+	if updatedProduct == nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update product"}}}), nil
+	}
+
+	return models.Response(200, models.Success{}), nil
+}
+
+// RentalsRentContractIdGet - Retrieve a single rent contract
+func (s *RentalAPIService) RentalsRentContractIdGet(ctx context.Context, rentContractId string, r *http.Request) (models.ImplResponse, error) {
+	user, userErr := openapi.IsUserAuthorized(ctx, r)
+	admin, adminErr := openapi.IsAdmin(ctx, r)
+	if userErr != nil && adminErr != nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
+	}
+
+	contract := database_rent_contract.FindRentContractById(ctx, rentContractId)
+	if contract == nil {
+		return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Rent contract not found"}}}), nil
+	}
+
+	if admin == nil && contract.UserID != user.ID {
+		return models.Response(403, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. This contract belongs to another user."}}}), nil
+	}
+
+	paymentInstruction := models.PaymentInstructions{
+		PaymentMethodId:   models.PaymentMethod(contract.PaymentInstruction.PaymentMethodID),
+		DynamicAttributes: contract.PaymentInstruction.DynamicAttributes,
+	}
+	response := models.RentContract{
+		Id:                  contract.ID,
+		UserId:              contract.UserID,
+		ProductId:           contract.ProductID,
+		RentalStartDate:     contract.RentalStartDate,
+		RentalEndDate:       contract.RentalEndDate,
+		Status:              models.RentContractStatus(contract.Status),
+		Price:               contract.Price,
+		Deposit:             contract.Deposit,
+		TotalAmount:         contract.TotalAmount,
+		PickupLocationId:    contract.PickupLocationID,
+		ReturnLocationId:    contract.ReturnLocationID,
+		PaymentInstructions: paymentInstruction,
+	}
+
+	return models.Response(200, response), nil
+}
+
 // RentalsRentContractIdPickupPost - Confirm product pickup
 func (s *RentalAPIService) RentalsRentContractIdPickupPost(ctx context.Context, rentContractId string, pickupConfirmation models.PickupConfirmation, r *http.Request) (models.ImplResponse, error) {
 	// Verify user authorization
-	user, err := openapi.IsUserAuthorized(ctx, r)
-	if err != nil {
-		log.Error().Msg(err.Error())
+	user, userErr := openapi.IsUserAuthorized(ctx, r)
+	admin, adminErr := openapi.IsAdmin(ctx, r)
+	if userErr != nil && adminErr != nil {
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
 	}
 
@@ -49,7 +177,7 @@ func (s *RentalAPIService) RentalsRentContractIdPickupPost(ctx context.Context, 
 	}
 
 	// Verify contract belongs to user
-	if contract.UserID != user.ID {
+	if admin == nil && contract.UserID != user.ID {
 		return models.Response(403, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. This contract belongs to another user."}}}), nil
 	}
 
@@ -63,17 +191,13 @@ func (s *RentalAPIService) RentalsRentContractIdPickupPost(ctx context.Context, 
 	if contract.DynamicAttributes == nil {
 		contract.DynamicAttributes = make(map[string]interface{})
 	}
-	contract.DynamicAttributes["pickupImages"] = pickupConfirmation.PickupImages
+	if len(pickupConfirmation.PickupImages) > 0 {
+		contract.DynamicAttributes["pickupImages"] = pickupConfirmation.PickupImages
+	}
 
 	updatedContract := database_rent_contract.UpdateRentContract(ctx, contract)
 	if updatedContract == nil {
-		return models.Response(500, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update rent contract"}}}), nil
-	}
-
-	// Update product rental status
-	product := database_product.FindProductById(ctx, contract.ProductID)
-	if product == nil {
-		return models.Response(500, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to find product"}}}), nil
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update rent contract"}}}), nil
 	}
 
 	return models.Response(200, models.Success{}), nil
@@ -82,9 +206,9 @@ func (s *RentalAPIService) RentalsRentContractIdPickupPost(ctx context.Context, 
 // RentalsRentContractIdReturnPost - Confirm product return
 func (s *RentalAPIService) RentalsRentContractIdReturnPost(ctx context.Context, rentContractId string, returnProduct models.ReturnProduct, r *http.Request) (models.ImplResponse, error) {
 	// Verify user authorization
-	user, err := openapi.IsUserAuthorized(ctx, r)
-	if err != nil {
-		log.Error().Msg(err.Error())
+	user, userErr := openapi.IsUserAuthorized(ctx, r)
+	admin, adminErr := openapi.IsAdmin(ctx, r)
+	if userErr != nil && adminErr != nil {
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
 	}
 
@@ -95,7 +219,7 @@ func (s *RentalAPIService) RentalsRentContractIdReturnPost(ctx context.Context, 
 	}
 
 	// Verify contract belongs to user
-	if contract.UserID != user.ID {
+	if admin == nil && contract.UserID != user.ID {
 		return models.Response(403, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. This contract belongs to another user."}}}), nil
 	}
 
@@ -109,26 +233,26 @@ func (s *RentalAPIService) RentalsRentContractIdReturnPost(ctx context.Context, 
 	if contract.DynamicAttributes == nil {
 		contract.DynamicAttributes = make(map[string]interface{})
 	}
-	contract.DynamicAttributes["returnImages"] = returnProduct.ReturnImages
-	contract.DynamicAttributes["returnNotes"] = returnProduct.AdditionalNotes
+	if len(returnProduct.ReturnImages) > 0 {
+		contract.DynamicAttributes["returnImages"] = returnProduct.ReturnImages
+	}
 
 	updatedContract := database_rent_contract.UpdateRentContract(ctx, contract)
 	if updatedContract == nil {
-		return models.Response(500, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update rent contract"}}}), nil
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update rent contract"}}}), nil
 	}
 
 	// Update product rental status
 	product := database_product.FindProductById(ctx, contract.ProductID)
 	if product == nil {
-		return models.Response(500, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to find product"}}}), nil
+		return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to find product"}}}), nil
 	}
 
 	product.IsRented = false
-	product.RenterInfo = nil
+	product.RenterInfo = database_product.RenterInfo{}
 	updatedProduct := database_product.UpdateProduct(ctx, product)
 	if updatedProduct == nil {
-		// Rollback contract status
-		return models.Response(500, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update product rental status"}}}), nil
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update product rental status"}}}), nil
 	}
 
 	return models.Response(200, models.Success{}), nil

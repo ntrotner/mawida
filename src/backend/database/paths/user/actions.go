@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	authentication "template_backend/infrastructure/authentication"
+	paymentTypes "template_backend/infrastructure/payment/types"
 
 	"github.com/go-kivik/kivik"
 	"github.com/google/uuid"
@@ -56,14 +57,22 @@ func CreateUser(ctx context.Context, email string, password string) (*UserProfil
 	return dbUser, nil
 }
 
+// ChangeUserEmail changes the email from an user
 func ChangeUserEmail(ctx context.Context, id *string, newEmail *string) (*UserProfile, error) {
 	user := FindUserById(ctx, id)
 	if user == nil {
 		return nil, errors.New("couldn't find user")
 	}
+
+	oldEmail := user.Email
 	user.Email = *newEmail
 	_, err := DatabaseUser.Put(ctx, user.ID, user, kivik.Options{"_rev": user.Rev})
 	if err != nil {
+		log.Error().
+			Str("fromEmail", oldEmail).
+			Str("toEmail", *newEmail).
+			Msg("Couldn't update user email")
+
 		return nil, errors.New("couldn't update user")
 	}
 
@@ -82,6 +91,7 @@ func ChangeUserPassword(ctx context.Context, id *string, newPassword *string) (*
 		log.Error().
 			Str("id", *id).
 			Msg(err.Error())
+
 		return nil, err
 	}
 
@@ -90,8 +100,26 @@ func ChangeUserPassword(ctx context.Context, id *string, newPassword *string) (*
 
 	_, err = DatabaseUser.Put(ctx, user.ID, user, kivik.Options{"_rev": user.Rev})
 	if err != nil {
+		log.Error().
+			Str("id", *id).
+			Msg("Couldn't update user password")
+
 		return nil, errors.New("couldn't update user")
 	}
 
+	return user, nil
+}
+
+func UpdateUserForPayment(ctx context.Context, id *string, role *UserRole, customerIdentifier *paymentTypes.CustomerIdentifier) (*UserProfile, error) {
+	user := FindUserById(ctx, id)
+	if user == nil {
+		return nil, errors.New("couldn't find user")
+	}
+	user.Roles = *role
+	user.CustomerIdentifier = customerIdentifier
+	_, err := DatabaseUser.Put(ctx, user.ID, user, kivik.Options{"_rev": user.Rev})
+	if err != nil {
+		return nil, errors.New("couldn't update user")
+	}
 	return user, nil
 }

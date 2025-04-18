@@ -2,12 +2,13 @@ package database_product
 
 import (
 	"context"
+	paymentTypes "template_backend/infrastructure/payment/types"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
-func CreateProduct(ctx context.Context, name string, description string, location string, pricing ProductPricing, images []ProductImage, documents []ProductDocument, dynamicAttributes map[string]interface{}) *Product {
+func CreateProduct(ctx context.Context, name string, description string, location string, pricing ProductPricing, images []ProductImage, documents []ProductDocument, productIdentifier *paymentTypes.ProductIdentifier, dynamicAttributes map[string]interface{}) *Product {
 	if DatabaseProduct == nil {
 		return nil
 	}
@@ -22,7 +23,8 @@ func CreateProduct(ctx context.Context, name string, description string, locatio
 		Documents:         documents,
 		DynamicAttributes: dynamicAttributes,
 		IsRented:          false,
-		RenterInfo:        nil,
+		RenterInfo:        RenterInfo{},
+		ProductIdentifier: *productIdentifier,
 	}
 
 	_, err := DatabaseProduct.Put(ctx, product.ID, product)

@@ -14,7 +14,7 @@ import "template_backend/infrastructure/validators"
 
 type PickupConfirmation struct {
 	// Base64 encoded image data
-	PickupImages []string `json:"pickupImages" validate:"required,min=1,max=10,dive,required"`
+	PickupImages []string `json:"pickupImages" validate:"required,max=10,dive,required"`
 }
 
 // AssertPickupConfirmationRequired checks if the required fields are not zero-ed

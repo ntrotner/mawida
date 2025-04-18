@@ -45,7 +45,6 @@ func (s *AuthenticationAPIService) LoginPost(ctx context.Context, userLogin mode
 		log.Error().Msg(err.Error())
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized. Please check your credentials."}}}), nil
 	}
-	log.Info().Msgf("Token created: %s", tokenString)
 
 	api_authentication.WriteTokenToHeader(&tokenString, w)
 	return models.Response(200, models.Success{}), nil

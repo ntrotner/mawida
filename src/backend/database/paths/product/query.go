@@ -38,6 +38,7 @@ func FindProductById(ctx context.Context, id string) *Product {
 		"dynamicAttributes",
 		"isRented",
 		"renterInfo",
+		"productIdentifier",
 	})
 	rows, err := DatabaseProduct.Find(ctx, query)
 	if err != nil {
@@ -78,6 +79,7 @@ func GetAllProducts(ctx context.Context) []Product {
 			"dynamicAttributes",
 			"isRented",
 			"renterInfo",
+			"productIdentifier",
 		},
 	}
 

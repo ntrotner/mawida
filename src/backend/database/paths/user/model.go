@@ -1,5 +1,9 @@
 package database_user
 
+import (
+	paymentTypes "template_backend/infrastructure/payment/types"
+)
+
 type UserRole uint8
 
 const (
@@ -9,12 +13,13 @@ const (
 )
 
 type UserProfile struct {
-	ID    string   `json:"_id,omitempty"`
-	Rev   string   `json:"_rev,omitempty"`
-	Hash  string   `json:"hash,omitempty"`
-	Salt  string   `json:"salt,omitempty"`
-	Email string   `json:"email,omitempty"`
-	Roles UserRole `json:"roles,omitempty"`
+	ID                 string                           `json:"_id,omitempty"`
+	Rev                string                           `json:"_rev,omitempty"`
+	Hash               string                           `json:"hash,omitempty"`
+	Salt               string                           `json:"salt,omitempty"`
+	Email              string                           `json:"email,omitempty"`
+	Roles              UserRole                         `json:"roles,omitempty"`
+	CustomerIdentifier *paymentTypes.CustomerIdentifier `json:"customerIdentifier,omitempty"`
 }
 
 type PublicUserProfile struct {

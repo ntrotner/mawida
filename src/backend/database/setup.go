@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"template_backend/core/config"
 	database_location "template_backend/database/paths/location"
+	database_payments "template_backend/database/paths/payments"
 	database_product "template_backend/database/paths/product"
 	database_rent_contract "template_backend/database/paths/rent_contract"
 	database_user "template_backend/database/paths/user"
@@ -72,6 +73,7 @@ func Connect(ctx context.Context) {
 		database_location.LOCATION_DB,
 		database_product.PRODUCT_DB,
 		database_rent_contract.RENT_CONTRACT_DB,
+		database_payments.PAYMENTS_DB,
 	} {
 		createDatabase(ctx, value)
 	}
