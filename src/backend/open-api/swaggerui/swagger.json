@@ -929,10 +929,14 @@
         "properties": {
           "email": {
             "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
           }
         },
         "required": [
-          "email"
+          "email",
+          "role"
         ]
       },
       "UserRegistration": {
@@ -1100,12 +1104,12 @@
             "properties": {
               "price": {
                 "type": "number",
-                "format": "float",
+                "format": "int64",
                 "description": "Price of the product"
               },
               "deposit": {
                 "type": "number",
-                "format": "float",
+                "format": "int64",
                 "description": "Deposit amount for the product"
               }
             },
@@ -1389,17 +1393,17 @@
           },
           "price": {
             "type": "number",
-            "format": "float",
+            "format": "int64",
             "description": "Price of the rent contract"
           },
           "deposit": {
             "type": "number",
-            "format": "float",
+            "format": "int64",
             "description": "Deposit amount for the rent contract"
           },
           "totalAmount": {
             "type": "number",
-            "format": "float",
+            "format": "int64",
             "description": "Total amount of the rent contract"
           },
           "pickupLocationId": {

@@ -8,5 +8,9 @@
   "nav-menu.login": "Login",
   "nav-menu.profile": "Profile",
   "nav-menu.logout": "Logout",
-  "backend-down": "We experience an unexpected service outage. Please check back later!"
+  "backend-down": "We experience an unexpected service outage. Please check back later!",
+  "sidebar.locations": "Locations",
+  "sidebar.users": "Users",
+  "sidebar.statistics": "Statistics",
+  "sidebar.products": "Products"
 }

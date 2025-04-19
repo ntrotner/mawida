@@ -577,8 +577,11 @@ components:
       properties:
         email:
           type: string
+        role:
+          $ref: '#/components/schemas/Role'
       required:
         - email
+        - role
     UserRegistration:
       type: object
       properties:

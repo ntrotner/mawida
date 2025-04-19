@@ -1,18 +1,11 @@
 <script lang="ts">
   import "../app.pcss";
-  import Navigator from "../components/navigator/Navigator.svelte";
   import { Toaster } from "$lib/components/ui/sonner";
   import { appState } from "$lib/states/app";
   import { DoubleBounce } from "svelte-loading-spinners";
   import { map } from "rxjs";
-  import SlimNavigator from "../components/navigator/SlimNavigator.svelte";
-  import { configState } from "../lib/states/config";
-  import { type AppConfig, AppConfigKey } from "../lib/states/status";
 
   const loaded = appState.observable().pipe(map((state) => state.loaded));
-  const navigatorStyle = configState
-    .getConfig<AppConfig>(AppConfigKey)
-    .pipe(map((state) => state?.navigation));
 </script>
 
 {#if !$loaded}
@@ -21,12 +14,6 @@
       <DoubleBounce color="#0f172a"></DoubleBounce>
     </div>
   </div>
-{/if}
-{#if $navigatorStyle === "bulky"}
-  <Navigator></Navigator>
-{/if}
-{#if $navigatorStyle === "slim"}
-  <SlimNavigator></SlimNavigator>
 {/if}
 <Toaster></Toaster>
 {#if $loaded}
