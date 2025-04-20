@@ -5,6 +5,7 @@ import (
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/price"
 	"github.com/stripe/stripe-go/v82/product"
+	"github.com/stripe/stripe-go/v82/refund"
 )
 
 // ProductData represents the data needed to create a product
@@ -79,4 +80,15 @@ func DeleteProduct(productID string) (*stripe.Product, error) {
 	InitStripe()
 
 	return product.Del(productID, nil)
+}
+
+func RefundPrice(paymentIntentID string, amount int64) (*stripe.Refund, error) {
+	// Initialize Stripe if not already initialized
+	InitStripe()
+
+	params := &stripe.RefundParams{
+		PaymentIntent: stripe.String(paymentIntentID),
+		Amount:        stripe.Int64(amount),
+	}
+	return refund.New(params)
 }

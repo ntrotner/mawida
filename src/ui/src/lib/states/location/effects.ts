@@ -1,4 +1,4 @@
-import { AdminApi, UserApi, type Success, type ModelError, ResponseError, type Location } from "$lib/open-api";
+import { LocationApi, type Success, type ModelError, ResponseError, type Location } from "../../../lib/open-api";
 import { locationState } from "./location";
 
 /**
@@ -7,8 +7,8 @@ import { locationState } from "./location";
  */
 export async function fetchLocations(): Promise<Location[]> {
   try {
-    const userApi = new UserApi();
-    const locations = await userApi.locationsGet();
+    const locationApi = new LocationApi();
+    const locations = await locationApi.locationsGet();
     locationState.setState(locations);
     return locations;
   } catch (e) {
@@ -24,8 +24,8 @@ export async function fetchLocations(): Promise<Location[]> {
  */
 export async function fetchLocationById(locationId: string): Promise<Location | undefined> {
   try {
-    const userApi = new UserApi();
-    return await userApi.locationLocationIdGet({ locationId });
+    const locationApi = new LocationApi();
+    return await locationApi.locationLocationIdGet({ locationId });
   } catch (e) {
     console.error(`Error fetching location with ID ${locationId}:`, e);
     return undefined;
@@ -38,9 +38,9 @@ export async function fetchLocationById(locationId: string): Promise<Location | 
  * @returns {Promise<Success & ModelError | undefined>} - A promise that resolves to a Success object or undefined.
  */
 export async function createLocation(location: Location): Promise<Success & ModelError | undefined> {
-  const adminApi = new AdminApi();
+  const locationApi = new LocationApi();
   try {
-    const response = await adminApi.locationsPost({ location });
+    const response = await locationApi.locationsPost({ location });
     // Refresh the locations list after creating a new one
     await fetchLocations();
     return response;

@@ -570,6 +570,41 @@
         }
       }
     },
+    "/administration/sales": {
+      "get": {
+        "tags": [
+          "administration"
+        ],
+        "summary": "Retrieve all sales",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SalesList"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/administration/users": {
+      "get": {
+        "tags": [
+          "administration"
+        ],
+        "summary": "Retrieve all users",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/UserList"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/administration/change-role/{userId}": {
       "post": {
         "tags": [
@@ -598,6 +633,31 @@
             "$ref": "#/components/responses/Error"
           },
           "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/administration/refund-deposit": {
+      "post": {
+        "tags": [
+          "administration"
+        ],
+        "summary": "Refund deposit of a payment transaction",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/RefundDeposit"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
             "$ref": "#/components/responses/Error"
           }
         }
@@ -753,6 +813,32 @@
             }
           }
         }
+      },
+      "UserList": {
+        "description": "List of users",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/UserProfile"
+              }
+            }
+          }
+        }
+      },
+      "SalesList": {
+        "description": "List of sales",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Sale"
+              }
+            }
+          }
+        }
       }
     },
     "requestBodies": {
@@ -865,6 +951,16 @@
             }
           }
         }
+      },
+      "RefundDeposit": {
+        "description": "Refund deposit",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/RefundDeposit"
+            }
+          }
+        }
       }
     },
     "schemas": {
@@ -926,12 +1022,23 @@
       },
       "UserProfile": {
         "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ChangeRole"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the user"
+              }
+            }
+          }
+        ],
         "properties": {
           "email": {
             "type": "string"
-          },
-          "role": {
-            "$ref": "#/components/schemas/Role"
           }
         },
         "required": [
@@ -1158,6 +1265,10 @@
               "renterInfo": {
                 "type": "object",
                 "properties": {
+                  "userId": {
+                    "type": "string",
+                    "description": "Unique identifier for the renter"
+                  },
                   "rentalStartDate": {
                     "type": "integer",
                     "format": "int64",
@@ -1347,6 +1458,10 @@
       "PaymentInstructions": {
         "type": "object",
         "properties": {
+          "paymentTransactionId": {
+            "type": "string",
+            "description": "Unique identifier for the payment transaction"
+          },
           "paymentMethodId": {
             "$ref": "#/components/schemas/PaymentMethod"
           },
@@ -1357,7 +1472,8 @@
           }
         },
         "required": [
-          "paymentMethodId"
+          "paymentMethodId",
+          "paymentTransactionId"
         ]
       },
       "RentContract": {
@@ -1413,6 +1529,76 @@
           "returnLocationId": {
             "type": "string",
             "description": "Unique identifier for the return location"
+          }
+        }
+      },
+      "Sale": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the sale"
+          },
+          "productId": {
+            "type": "string",
+            "description": "Unique identifier for the product"
+          },
+          "userId": {
+            "type": "string",
+            "description": "Unique identifier for the user"
+          },
+          "price": {
+            "type": "number",
+            "format": "int64",
+            "description": "Price of the sale"
+          },
+          "paid": {
+            "type": "boolean",
+            "description": "Indicates whether the sale has been paid"
+          },
+          "deposit": {
+            "type": "number",
+            "format": "int64",
+            "description": "Deposit amount for the sale"
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp for the creation date of the sale"
+          },
+          "paidAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp for the payment date of the sale"
+          },
+          "returnedAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp for the return date of the sale"
+          },
+          "depositRefundedAmount": {
+            "type": "number",
+            "format": "int64",
+            "description": "Amount of the deposit that has been refunded"
+          },
+          "depositRefundedAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp for the deposit refund date"
+          }
+        }
+      },
+      "RefundDeposit": {
+        "type": "object",
+        "properties": {
+          "paymentTransactionId": {
+            "type": "string",
+            "description": "Unique identifier for the payment transaction"
+          },
+          "depositRefundedAmount": {
+            "type": "number",
+            "format": "int64",
+            "description": "Amount of the deposit that has been refunded"
           }
         }
       }

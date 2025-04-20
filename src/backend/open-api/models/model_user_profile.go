@@ -15,6 +15,7 @@ import (
 )
 
 type UserProfile struct {
+	Id    string `json:"id" validate:"required"`
 	Email string `json:"email" validate:"required,email"`
 	Role  string `json:"role" validate:"required,oneof=admin user temporary"`
 }
@@ -22,6 +23,7 @@ type UserProfile struct {
 // AssertUserProfileRequired checks if the required fields are not zero-ed
 func AssertUserProfileRequired(obj UserProfile) error {
 	elements := map[string]interface{}{
+		"id":    obj.Id,
 		"email": obj.Email,
 		"role":  obj.Role,
 	}

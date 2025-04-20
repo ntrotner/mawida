@@ -13,6 +13,7 @@
   import Alert from "../../components/alert/Alert.svelte";
   import { writable } from "svelte/store";
   import { toast } from "svelte-sonner";
+  import SlimNavigator from "../../components/navigator/SlimNavigator.svelte";
 
   // Error stores
   const errorsEmail = writable<string[]>([]);
@@ -104,6 +105,10 @@
     $errorsPassword = [];
   }
 </script>
+
+<div>
+  <SlimNavigator />
+</div>
 
 <div class="wrapper">
   <div class="header">

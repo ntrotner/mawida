@@ -17,13 +17,7 @@ import * as runtime from '../runtime';
 import type {
   ChangeEmail,
   ChangePassword,
-  Location,
   PasswordReset,
-  PickupConfirmation,
-  ProductsProductIdGet200Response,
-  RentProductConfirmation,
-  RentProductFormular,
-  ReturnProduct,
   Success,
   UserProfile,
 } from '../models/index';
@@ -32,20 +26,8 @@ import {
     ChangeEmailToJSON,
     ChangePasswordFromJSON,
     ChangePasswordToJSON,
-    LocationFromJSON,
-    LocationToJSON,
     PasswordResetFromJSON,
     PasswordResetToJSON,
-    PickupConfirmationFromJSON,
-    PickupConfirmationToJSON,
-    ProductsProductIdGet200ResponseFromJSON,
-    ProductsProductIdGet200ResponseToJSON,
-    RentProductConfirmationFromJSON,
-    RentProductConfirmationToJSON,
-    RentProductFormularFromJSON,
-    RentProductFormularToJSON,
-    ReturnProductFromJSON,
-    ReturnProductToJSON,
     SuccessFromJSON,
     SuccessToJSON,
     UserProfileFromJSON,
@@ -60,31 +42,8 @@ export interface ChangePasswordPostRequest {
     changePassword?: ChangePassword;
 }
 
-export interface LocationLocationIdGetRequest {
-    locationId: string;
-}
-
 export interface PasswordResetPostRequest {
     passwordReset?: PasswordReset;
-}
-
-export interface ProductsProductIdGetRequest {
-    productId: string;
-}
-
-export interface ProductsProductIdRentPostRequest {
-    productId: string;
-    rentProductFormular?: RentProductFormular;
-}
-
-export interface RentalsRentContractIdPickupPostRequest {
-    rentContractId: string;
-    pickupConfirmation?: PickupConfirmation;
-}
-
-export interface RentalsRentContractIdReturnPostRequest {
-    rentContractId: string;
-    returnProduct?: ReturnProduct;
 }
 
 /**
@@ -167,78 +126,6 @@ export class UserApi extends runtime.BaseAPI {
     }
 
     /**
-     * Retrieve a single location
-     */
-    async locationLocationIdGetRaw(requestParameters: LocationLocationIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Location>> {
-        if (requestParameters.locationId === null || requestParameters.locationId === undefined) {
-            throw new runtime.RequiredError('locationId','Required parameter requestParameters.locationId was null or undefined when calling locationLocationIdGet.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/location/{locationId}`.replace(`{${"locationId"}}`, encodeURIComponent(String(requestParameters.locationId))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => LocationFromJSON(jsonValue));
-    }
-
-    /**
-     * Retrieve a single location
-     */
-    async locationLocationIdGet(requestParameters: LocationLocationIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Location> {
-        const response = await this.locationLocationIdGetRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Retrieve all locations
-     */
-    async locationsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Location>>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/locations`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(LocationFromJSON));
-    }
-
-    /**
-     * Retrieve all locations
-     */
-    async locationsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Location>> {
-        const response = await this.locationsGetRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Initiate password reset
      */
     async passwordResetPostRaw(requestParameters: PasswordResetPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Success>> {
@@ -276,85 +163,6 @@ export class UserApi extends runtime.BaseAPI {
     }
 
     /**
-     * Retrieve a single product
-     */
-    async productsProductIdGetRaw(requestParameters: ProductsProductIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ProductsProductIdGet200Response>> {
-        if (requestParameters.productId === null || requestParameters.productId === undefined) {
-            throw new runtime.RequiredError('productId','Required parameter requestParameters.productId was null or undefined when calling productsProductIdGet.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/products/{productId}`.replace(`{${"productId"}}`, encodeURIComponent(String(requestParameters.productId))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => ProductsProductIdGet200ResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Retrieve a single product
-     */
-    async productsProductIdGet(requestParameters: ProductsProductIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ProductsProductIdGet200Response> {
-        const response = await this.productsProductIdGetRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Rent a product
-     */
-    async productsProductIdRentPostRaw(requestParameters: ProductsProductIdRentPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RentProductConfirmation>> {
-        if (requestParameters.productId === null || requestParameters.productId === undefined) {
-            throw new runtime.RequiredError('productId','Required parameter requestParameters.productId was null or undefined when calling productsProductIdRentPost.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/products/{productId}/rent`.replace(`{${"productId"}}`, encodeURIComponent(String(requestParameters.productId))),
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: RentProductFormularToJSON(requestParameters.rentProductFormular),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => RentProductConfirmationFromJSON(jsonValue));
-    }
-
-    /**
-     * Rent a product
-     */
-    async productsProductIdRentPost(requestParameters: ProductsProductIdRentPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RentProductConfirmation> {
-        const response = await this.productsProductIdRentPostRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Get user profile
      */
     async profileGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserProfile>> {
@@ -385,88 +193,6 @@ export class UserApi extends runtime.BaseAPI {
      */
     async profileGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserProfile> {
         const response = await this.profileGetRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Confirm product pickup
-     */
-    async rentalsRentContractIdPickupPostRaw(requestParameters: RentalsRentContractIdPickupPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Success>> {
-        if (requestParameters.rentContractId === null || requestParameters.rentContractId === undefined) {
-            throw new runtime.RequiredError('rentContractId','Required parameter requestParameters.rentContractId was null or undefined when calling rentalsRentContractIdPickupPost.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/rentals/{rentContractId}/pickup`.replace(`{${"rentContractId"}}`, encodeURIComponent(String(requestParameters.rentContractId))),
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: PickupConfirmationToJSON(requestParameters.pickupConfirmation),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => SuccessFromJSON(jsonValue));
-    }
-
-    /**
-     * Confirm product pickup
-     */
-    async rentalsRentContractIdPickupPost(requestParameters: RentalsRentContractIdPickupPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Success> {
-        const response = await this.rentalsRentContractIdPickupPostRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Confirm product return
-     */
-    async rentalsRentContractIdReturnPostRaw(requestParameters: RentalsRentContractIdReturnPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Success>> {
-        if (requestParameters.rentContractId === null || requestParameters.rentContractId === undefined) {
-            throw new runtime.RequiredError('rentContractId','Required parameter requestParameters.rentContractId was null or undefined when calling rentalsRentContractIdReturnPost.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/rentals/{rentContractId}/return`.replace(`{${"rentContractId"}}`, encodeURIComponent(String(requestParameters.rentContractId))),
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: ReturnProductToJSON(requestParameters.returnProduct),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => SuccessFromJSON(jsonValue));
-    }
-
-    /**
-     * Confirm product return
-     */
-    async rentalsRentContractIdReturnPost(requestParameters: RentalsRentContractIdReturnPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Success> {
-        const response = await this.rentalsRentContractIdReturnPostRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

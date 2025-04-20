@@ -13,18 +13,19 @@
  */
 
 import { exists, mapValues } from '../runtime';
+import type { PaymentMethod } from './PaymentMethod';
+import {
+    PaymentMethodFromJSON,
+    PaymentMethodFromJSONTyped,
+    PaymentMethodToJSON,
+} from './PaymentMethod';
+
 /**
  * 
  * @export
  * @interface RentProductFormular
  */
 export interface RentProductFormular {
-    /**
-     * Unique identifier for the user renting the product
-     * @type {string}
-     * @memberof RentProductFormular
-     */
-    userId: string;
     /**
      * Unix timestamp for the start date of the rental period
      * @type {number}
@@ -50,11 +51,11 @@ export interface RentProductFormular {
      */
     locationId: string;
     /**
-     * Identifier for the payment method used for the rental
-     * @type {string}
+     * 
+     * @type {PaymentMethod}
      * @memberof RentProductFormular
      */
-    paymentMethodId: string;
+    paymentMethodId: PaymentMethod;
     /**
      * Dynamic attributes for the rental request
      * @type {{ [key: string]: any; }}
@@ -68,7 +69,6 @@ export interface RentProductFormular {
  */
 export function instanceOfRentProductFormular(value: object): boolean {
     let isInstance = true;
-    isInstance = isInstance && "userId" in value;
     isInstance = isInstance && "rentalStartDate" in value;
     isInstance = isInstance && "rentalEndDate" in value;
     isInstance = isInstance && "locationId" in value;
@@ -87,12 +87,11 @@ export function RentProductFormularFromJSONTyped(json: any, ignoreDiscriminator:
     }
     return {
         
-        'userId': json['userId'],
         'rentalStartDate': json['rentalStartDate'],
         'rentalEndDate': json['rentalEndDate'],
         'additionalNotes': !exists(json, 'additionalNotes') ? undefined : json['additionalNotes'],
         'locationId': json['locationId'],
-        'paymentMethodId': json['paymentMethodId'],
+        'paymentMethodId': PaymentMethodFromJSON(json['paymentMethodId']),
         'dynamicAttributes': !exists(json, 'dynamicAttributes') ? undefined : json['dynamicAttributes'],
     };
 }
@@ -106,12 +105,11 @@ export function RentProductFormularToJSON(value?: RentProductFormular | null): a
     }
     return {
         
-        'userId': value.userId,
         'rentalStartDate': value.rentalStartDate,
         'rentalEndDate': value.rentalEndDate,
         'additionalNotes': value.additionalNotes,
         'locationId': value.locationId,
-        'paymentMethodId': value.paymentMethodId,
+        'paymentMethodId': PaymentMethodToJSON(value.paymentMethodId),
         'dynamicAttributes': value.dynamicAttributes,
     };
 }

@@ -61,6 +61,21 @@ func (c *AdministrationAPIController) Routes() runtime.Routes {
 			Pattern:     "/administration/change-role/{userId}",
 			HandlerFunc: c.AdministrationChangeRoleUserIdPost,
 		},
+		"AdministrationRefundDepositPost": runtime.Route{
+			Method:      strings.ToUpper("Post"),
+			Pattern:     "/administration/refund-deposit",
+			HandlerFunc: c.AdministrationRefundDepositPost,
+		},
+		"AdministrationSalesGet": runtime.Route{
+			Method:      strings.ToUpper("Get"),
+			Pattern:     "/administration/sales",
+			HandlerFunc: c.AdministrationSalesGet,
+		},
+		"AdministrationUsersGet": runtime.Route{
+			Method:      strings.ToUpper("Get"),
+			Pattern:     "/administration/users",
+			HandlerFunc: c.AdministrationUsersGet,
+		},
 	}
 }
 
@@ -88,6 +103,57 @@ func (c *AdministrationAPIController) AdministrationChangeRoleUserIdPost(w http.
 		return
 	}
 	result, err := c.service.AdministrationChangeRoleUserIdPost(r.Context(), userIdParam, changeRoleParam, r)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	runtime.EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// AdministrationRefundDepositPost - Refund deposit of a payment transaction
+func (c *AdministrationAPIController) AdministrationRefundDepositPost(w http.ResponseWriter, r *http.Request) {
+	refundDepositParam := models.RefundDeposit{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&refundDepositParam); err != nil && !errors.Is(err, io.EOF) {
+		c.errorHandler(w, r, &models.ParsingError{Err: err}, nil)
+		return
+	}
+	if err := models.AssertRefundDepositRequired(refundDepositParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	if err := models.AssertRefundDepositConstraints(refundDepositParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.AdministrationRefundDepositPost(r.Context(), refundDepositParam, r)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	runtime.EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// AdministrationSalesGet - Retrieve all sales
+func (c *AdministrationAPIController) AdministrationSalesGet(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.AdministrationSalesGet(r.Context(), r)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	runtime.EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// AdministrationUsersGet - Retrieve all users
+func (c *AdministrationAPIController) AdministrationUsersGet(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.AdministrationUsersGet(r.Context(), r)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

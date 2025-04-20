@@ -376,6 +376,7 @@ func (s *ProductAPIService) ProductsProductIdRentPost(ctx context.Context, produ
 		product.Pricing.Deposit,
 		totalAmount,
 		string(rentProductFormular.PaymentMethodId),
+		paymentTransaction.ID,
 		rentProductFormular.LocationId,
 		rentProductFormular.LocationId,
 		rentProductFormular.AdditionalNotes,

@@ -13,6 +13,8 @@ package openapi
 import (
 	"context"
 	"net/http"
+	database_payments "template_backend/database/paths/payments"
+	database_rent_contract "template_backend/database/paths/rent_contract"
 	database_user "template_backend/database/paths/user"
 	"template_backend/infrastructure/payment"
 	paymentTypes "template_backend/infrastructure/payment/types"
@@ -28,6 +30,9 @@ import (
 // and updated with the logic required for the API.
 type AdministrationAPIServicer interface {
 	AdministrationChangeRoleUserIdPost(context.Context, string, models.ChangeRole, *http.Request) (models.ImplResponse, error)
+	AdministrationRefundDepositPost(context.Context, models.RefundDeposit, *http.Request) (models.ImplResponse, error)
+	AdministrationSalesGet(context.Context, *http.Request) (models.ImplResponse, error)
+	AdministrationUsersGet(context.Context, *http.Request) (models.ImplResponse, error)
 }
 
 // AdministrationAPIRouter defines the required methods for binding the api requests to a responses for the AdministrationAPI
@@ -35,6 +40,9 @@ type AdministrationAPIServicer interface {
 // pass the data to a AdministrationAPIServicer to perform the required actions, then write the service results to the http response.
 type AdministrationAPIRouter interface {
 	AdministrationChangeRoleUserIdPost(http.ResponseWriter, *http.Request)
+	AdministrationRefundDepositPost(http.ResponseWriter, *http.Request)
+	AdministrationSalesGet(http.ResponseWriter, *http.Request)
+	AdministrationUsersGet(http.ResponseWriter, *http.Request)
 }
 
 // AdministrationAPIService is a service that implements the logic for the AdministrationAPIServicer
@@ -128,4 +136,73 @@ func (s *AdministrationAPIService) AdministrationChangeRoleUserIdPost(ctx contex
 	}
 
 	return models.Response(200, models.Success{}), nil
+}
+
+// AdministrationRefundDepositPost - Refund deposit of a payment transaction
+func (s *AdministrationAPIService) AdministrationRefundDepositPost(ctx context.Context, refundDeposit models.RefundDeposit, r *http.Request) (models.ImplResponse, error) {
+	admin, err := openapi.IsAdmin(ctx, r)
+	if err != nil || admin == nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized"}}}), nil
+	}
+
+	rentContract := database_rent_contract.FindRentContractByPaymentTransactionId(ctx, refundDeposit.PaymentTransactionId)
+	if rentContract == nil {
+		return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "101", Message: "Rent contract not found"}}}), nil
+	}
+
+	_, err = payment.RefundPrice(rentContract.PaymentIdentifier.ID, refundDeposit.DepositRefundedAmount)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to refund price")
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to refund price"}}}), nil
+	}
+
+	_, err = database_payments.RefundDepositPaymentTransaction(ctx, refundDeposit.PaymentTransactionId, refundDeposit.DepositRefundedAmount)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to refund deposit")
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to refund deposit"}}}), nil
+	}
+
+	return models.Response(200, models.Success{}), nil
+}
+
+// AdministrationSalesGet - Retrieve all sales
+func (s *AdministrationAPIService) AdministrationSalesGet(ctx context.Context, r *http.Request) (models.ImplResponse, error) {
+	admin, err := openapi.IsAdmin(ctx, r)
+	if err != nil || admin == nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized"}}}), nil
+	}
+
+	paymentTransactions := database_payments.GetAllPaymentTransactions(ctx)
+	sanitizedPaymentTransactions := make([]models.Sale, len(paymentTransactions))
+	for i, paymentTransaction := range paymentTransactions {
+		sanitizedPaymentTransactions[i] = models.Sale{
+			Id:                    paymentTransaction.ID,
+			ProductId:             paymentTransaction.ProductID,
+			UserId:                paymentTransaction.CustomerID,
+			Price:                 paymentTransaction.ProductPrice,
+			Paid:                  paymentTransaction.Paid,
+			Deposit:               paymentTransaction.ProductDeposit,
+			CreatedAt:             paymentTransaction.CreatedAt,
+			PaidAt:                paymentTransaction.PaidAt,
+			ReturnedAt:            paymentTransaction.ReturnedAt,
+			DepositRefundedAmount: paymentTransaction.DepositRefundedAmount,
+			DepositRefundedAt:     paymentTransaction.DepositRefundedAt,
+		}
+	}
+	return models.Response(200, sanitizedPaymentTransactions), nil
+}
+
+// AdministrationUsersGet - Get all users
+func (s *AdministrationAPIService) AdministrationUsersGet(ctx context.Context, r *http.Request) (models.ImplResponse, error) {
+	admin, err := openapi.IsAdmin(ctx, r)
+	if err != nil || admin == nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Unauthorized"}}}), nil
+	}
+
+	users := database_user.GetAllUsers(ctx)
+	sanitizedUsers := make([]database_user.PublicUserProfile, len(users))
+	for i, user := range users {
+		sanitizedUsers[i] = *database_user.SanitizeUserProfileForAdmin(&user)
+	}
+	return models.Response(200, sanitizedUsers), nil
 }

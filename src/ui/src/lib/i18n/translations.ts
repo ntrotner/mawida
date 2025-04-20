@@ -9,6 +9,20 @@ const config = ({
   loaders: [
     {
       locale: 'en',
+      key: 'admin',
+      loader: async () => (
+        await import('./languages/admin/en.json')
+      ).default,
+    },
+    {
+      locale: 'de',
+      key: 'admin',
+      loader: async () => (
+        await import('./languages/admin/de.json')
+      ).default,
+    },
+    {
+      locale: 'en',
       key: 'common',
       loader: async () => (
         await import('./languages/common/en.json')

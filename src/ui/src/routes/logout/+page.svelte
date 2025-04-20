@@ -1,9 +1,13 @@
 <script>
   import { logout } from "$lib/states/authentication";
   import { t } from "$lib/i18n";
-
+  import SlimNavigator from "../../components/navigator/SlimNavigator.svelte";
   logout();
 </script>
+
+<div>
+  <SlimNavigator />
+</div>
 
 <div class="container mt-8">
   <div class="title">

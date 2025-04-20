@@ -20,6 +20,12 @@ import { exists, mapValues } from '../runtime';
  */
 export interface ProductPublicAllOfRenterInfo {
     /**
+     * Unique identifier for the renter
+     * @type {string}
+     * @memberof ProductPublicAllOfRenterInfo
+     */
+    userId?: string;
+    /**
      * Unix timestamp for the start date of the rental period
      * @type {number}
      * @memberof ProductPublicAllOfRenterInfo
@@ -58,6 +64,7 @@ export function ProductPublicAllOfRenterInfoFromJSONTyped(json: any, ignoreDiscr
     }
     return {
         
+        'userId': !exists(json, 'userId') ? undefined : json['userId'],
         'rentalStartDate': !exists(json, 'rentalStartDate') ? undefined : json['rentalStartDate'],
         'rentalEndDate': !exists(json, 'rentalEndDate') ? undefined : json['rentalEndDate'],
         'expectedDuration': !exists(json, 'expectedDuration') ? undefined : json['expectedDuration'],
@@ -73,6 +80,7 @@ export function ProductPublicAllOfRenterInfoToJSON(value?: ProductPublicAllOfRen
     }
     return {
         
+        'userId': value.userId,
         'rentalStartDate': value.rentalStartDate,
         'rentalEndDate': value.rentalEndDate,
         'expectedDuration': value.expectedDuration,

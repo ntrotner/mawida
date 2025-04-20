@@ -20,12 +20,6 @@ import { exists, mapValues } from '../runtime';
  */
 export interface PickupConfirmation {
     /**
-     * Unique identifier for the user picking up the product
-     * @type {string}
-     * @memberof PickupConfirmation
-     */
-    userId: string;
-    /**
      * 
      * @type {Array<string>}
      * @memberof PickupConfirmation
@@ -38,7 +32,6 @@ export interface PickupConfirmation {
  */
 export function instanceOfPickupConfirmation(value: object): boolean {
     let isInstance = true;
-    isInstance = isInstance && "userId" in value;
     isInstance = isInstance && "pickupImages" in value;
 
     return isInstance;
@@ -54,7 +47,6 @@ export function PickupConfirmationFromJSONTyped(json: any, ignoreDiscriminator: 
     }
     return {
         
-        'userId': json['userId'],
         'pickupImages': json['pickupImages'],
     };
 }
@@ -68,7 +60,6 @@ export function PickupConfirmationToJSON(value?: PickupConfirmation | null): any
     }
     return {
         
-        'userId': value.userId,
         'pickupImages': value.pickupImages,
     };
 }
