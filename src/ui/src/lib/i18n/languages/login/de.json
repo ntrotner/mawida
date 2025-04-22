@@ -2,9 +2,20 @@
   "login-title": "Login",
   "username": "E-Mail",
   "password": "Password",
-  "login-button": "Absenden",
+  "login-button": "Anmelden",
   "register-title": "Registrieren",
-  "register-button": "Absenden",
+  "register-button": "Registrieren",
   "password-repeat": "Password Wiederholen",
-  "input-error-title": "Fehler"
+  "input-error-title": "Fehler",
+  "welcome-login": "Willkommen zurück!",
+  "welcome-login.description": "Anmeldung bei Ihrem Konto",
+  "reset-password": "Passwort vergessen?",
+  "login-with": "Weiter mit",
+  "prompt-to-register": "Sie haben noch kein Konto?",
+  "redirect-to-register": "Registrieren",
+  "welcome-register": "Willkommen!",
+  "welcome-register.description": "Registrieren Sie ein neues Konto",
+  "register-with": "Weiter mit",
+  "prompt-to-login": "Sie haben ein Konto?",
+  "redirect-to-login": "Anmelden"
 }
