@@ -4,53 +4,119 @@
     import { t } from "$lib/i18n";
     import { page } from "$app/stores";
     import { ROUTES } from "$lib/routes/routes";
+    import { goto } from "$app/navigation";
+    import { usersState } from "$lib/states/users";
+    import { locationState } from "$lib/states/location";
+    import { derived } from "svelte/store";
+
     type SegmentType = { name: string; href: string };
 
-    $: segments = $page.url.pathname
-        .split("/")
-        .slice(2)
-        .reduce<[string, (SegmentType | undefined)[]]>(
-            (acc, segment) => {
-                if (!segment) return acc;
-                const [accPath, items] = acc;
-                const newPath = `${accPath}${accPath.endsWith("/") ? "" : "/"}${segment}`;
+    function getEmailFromId(id: string) {
+        const user = usersState.getSyncState()?.find((user) => user.id === id);
+        return user?.email;
+    }
 
-                if (acc[1].at(-1)?.name === "locations" && segment !== "create") {
-                    return [newPath, [...items, undefined]];
-                }
+    function getLocationNameFromId(id: string) {
+        const location = locationState
+            .getSyncState()
+            ?.find((location) => location.id === id);
+        return location?.city;
+    }
 
-                return [newPath, [...items, { name: segment, href: newPath }]];
-            },
-            [ROUTES.ADMIN, []],
-        );
+    $: segments = derived(
+        [page, locationState.getAsyncState()],
+        ([path, locations]) =>
+            path.url.pathname
+                .split("/")
+                .slice(2)
+                .reduce<[string, (SegmentType | undefined)[]]>(
+                    (acc, segment) => {
+                        if (!segment) return acc;
+                        const [accPath, items] = acc;
+                        const newPath = `${accPath}${accPath.endsWith("/") ? "" : "/"}${segment}`;
 
+                        if (
+                            acc[1].at(-1)?.name ===
+                                "admin.breadcrumb.locations" &&
+                            segment !== "create"
+                        ) {
+                            return [
+                                newPath,
+                                [
+                                    ...items,
+                                    {
+                                        name:
+                                            getLocationNameFromId(segment) ??
+                                            "",
+                                        href: acc[1].at(-1)?.href || "",
+                                    },
+                                ],
+                            ];
+                        }
+
+                        if (
+                            acc[1].at(-1)?.name === "admin.breadcrumb.customers"
+                        ) {
+                            return [
+                                newPath,
+                                [
+                                    ...items,
+                                    {
+                                        name: getEmailFromId(segment) ?? "",
+                                        href: newPath,
+                                    },
+                                ],
+                            ];
+                        }
+
+                        return [
+                            newPath,
+                            [
+                                ...items,
+                                {
+                                    name: `admin.breadcrumb.${segment}`,
+                                    href: newPath,
+                                },
+                            ],
+                        ];
+                    },
+                    [ROUTES.ADMIN, []],
+                ) || [],
+    );
 </script>
 
 <Breadcrumb.Root>
     <Breadcrumb.List>
         <Breadcrumb.Item>
-            <Breadcrumb.Link href={ROUTES.ADMIN}
-                >{$t("admin.home")}</Breadcrumb.Link
+            <Breadcrumb.Link
+                ><span
+                    class="cursor-pointer"
+                    on:click={() => goto(ROUTES.ADMIN)}>{$t("admin.home")}</span
+                ></Breadcrumb.Link
             >
         </Breadcrumb.Item>
 
-        {#each segments[1] as segment, i}
+        {#each $segments[1] as segment, i}
             {#if segment}
                 <Breadcrumb.Separator>
                     <ChevronRight class="h-4 w-4" />
                 </Breadcrumb.Separator>
                 <Breadcrumb.Item>
-                    {#if i === segments[1].length - 1}
-                        <Breadcrumb.Page
-                            >{$t(
-                                `admin.breadcrumb.${segment.name}`,
-                            )}</Breadcrumb.Page
+                    {#if i === $segments[1].length - 1}
+                        <Breadcrumb.Page>
+                            <span
+                                class="cursor-pointer"
+                                on:click={() => goto(segment.href)}
+                                >{$t(segment.name)}</span
+                            ></Breadcrumb.Page
                         >
                     {:else}
-                        <Breadcrumb.Link href={segment.href}
-                            >{$t(
-                                `admin.breadcrumb.${segment.name}`,
-                            )}</Breadcrumb.Link
+                        <Breadcrumb.Link
+                            ><span
+                                class="cursor-pointer"
+                                on:click={() => goto(segment.href)}
+                                >{$t(segment.name)}</span
+                            ></Breadcrumb.Link
                         >
                     {/if}
                 </Breadcrumb.Item>

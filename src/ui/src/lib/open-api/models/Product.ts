@@ -111,7 +111,7 @@ export function ProductFromJSONTyped(json: any, ignoreDiscriminator: boolean): P
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
+        'id': !exists(json, 'id') ? !exists(json, '_id') ? undefined : json['_id'] : json['id'],
         'name': json['name'],
         'description': json['description'],
         'images': !exists(json, 'images') ? undefined : ((json['images'] as Array<any>).map(ProductImagesInnerFromJSON)),

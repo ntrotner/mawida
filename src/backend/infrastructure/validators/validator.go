@@ -19,4 +19,5 @@ func SetupValidator() {
 	en_translations.RegisterDefaultTranslations(Validate, trans)
 
 	fields.SetupValidPassword(Validate)
+	fields.SetupValidDynamicAttributes(Validate)
 }

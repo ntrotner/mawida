@@ -30,7 +30,7 @@ type RentProductFormular struct {
 	PaymentMethodId PaymentMethod `json:"paymentMethodId" validate:"required,oneof=cash stripe"`
 
 	// Dynamic attributes for the rental request
-	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty"`
+	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty" validate:"dynamicAttributes"`
 }
 
 // AssertRentProductFormularRequired checks if the required fields are not zero-ed

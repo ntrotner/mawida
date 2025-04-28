@@ -89,7 +89,7 @@ export function LocationFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
+        'id': !exists(json, 'id') ? !exists(json, '_id') ? undefined : json['_id'] : json['id'],
         'city': !exists(json, 'city') ? undefined : json['city'],
         'street': !exists(json, 'street') ? undefined : json['street'],
         'postalCode': !exists(json, 'postalCode') ? undefined : json['postalCode'],

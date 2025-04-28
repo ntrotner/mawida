@@ -106,7 +106,7 @@ export function SaleFromJSONTyped(json: any, ignoreDiscriminator: boolean): Sale
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
+        'id': !exists(json, 'id') ? !exists(json, '_id') ? undefined : json['_id'] : json['id'],
         'productId': !exists(json, 'productId') ? undefined : json['productId'],
         'userId': !exists(json, 'userId') ? undefined : json['userId'],
         'price': !exists(json, 'price') ? undefined : json['price'],

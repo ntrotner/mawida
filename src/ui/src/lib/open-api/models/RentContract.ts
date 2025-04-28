@@ -125,7 +125,7 @@ export function RentContractFromJSONTyped(json: any, ignoreDiscriminator: boolea
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
+        'id': !exists(json, 'id') ? !exists(json, '_id') ? undefined : json['_id'] : json['id'],
         'productId': !exists(json, 'productId') ? undefined : json['productId'],
         'userId': !exists(json, 'userId') ? undefined : json['userId'],
         'paymentInstructions': !exists(json, 'paymentInstructions') ? undefined : PaymentInstructionsFromJSON(json['paymentInstructions']),

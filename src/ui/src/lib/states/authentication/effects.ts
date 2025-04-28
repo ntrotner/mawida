@@ -3,6 +3,9 @@ import { fetchUserProfile, userState } from "../user";
 import { authenticationState } from ".";
 import { clearToken, existsToken, isTokenTimeValid } from "../../open-api/helpers";
 import { appState } from "../app";
+import { productState } from "../product";
+import { locationState } from "../location";
+import { rentContractsState } from "../rent_contracts";
 
 /**
  * Login the user.
@@ -21,6 +24,9 @@ export async function login(email: string, password: string): Promise<Success & 
       }
     });
     await fetchUserProfile();
+    productState.reset();
+    locationState.reset();
+    rentContractsState.reset();
     authenticationState.setAuthStatus(true)
     return response;
   } catch (e: unknown) {

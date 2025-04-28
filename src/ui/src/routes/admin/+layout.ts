@@ -5,12 +5,14 @@ import { ROUTES } from "$lib/routes";
 import { firstValueFrom, map } from "rxjs";
 import { configState } from "$lib/states/config";
 import { type AppConfig, AppConfigKey } from "$lib/states/status";
+import { fetchLocations, locationState } from "$lib/states/location";
+import { fetchSales, salesState } from "$lib/states/sales";
 
-export const load = async ({ parent }) => {
+export const load = async ({ parent, url }) => {
   if (browser) {
     await parent();
 
-    firstValueFrom(configState.getConfig<AppConfig>(AppConfigKey)
+    await firstValueFrom(configState.getConfig<AppConfig>(AppConfigKey)
       .pipe(map((config) => config?.user))).then(async isUserEnabled => {
         if (!isUserEnabled) {
           goto(ROUTES.HOME);
@@ -23,6 +25,16 @@ export const load = async ({ parent }) => {
         const isAdmin = await isUserAdmin();
         if (!isAdmin) {
           goto(ROUTES.HOME);
+        }
+
+        const locations = locationState.getSyncState();
+        if (!locations || locations.length === 0) {
+          fetchLocations();
+        }
+
+        const sales = salesState.getSyncState();
+        if (!sales || sales.length === 0) {
+          fetchSales();
         }
       })
   }

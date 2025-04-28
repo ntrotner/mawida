@@ -18,6 +18,7 @@
   import { GithubLogo } from "svelte-radix";
   import SlimNavigator from "../../components/navigator/SlimNavigator.svelte";
   import loginBackground from '$lib/assets/login-background.png';
+    import { userState } from "$lib/states/user";
 
   // Reactive state management
   const errors = writable<string[]>([]);
@@ -78,7 +79,14 @@
       } else if (isError(response)) {
         fillErrors(response);
       } else {
-        goto(ROUTES.HOME);
+        const user = await userState.getSyncState();
+        if (user?.role === "admin") {
+          goto(ROUTES.ADMIN);
+        } else if (user?.role === "user") {
+          goto(ROUTES.CUSTOMER_PROFILE);
+        } else {
+          goto(ROUTES.HOME);
+        }
       }
     } finally {
       requestInProcess.set(false);
@@ -162,10 +170,6 @@
     document.firstElementChild.style.backgroundAttachment = '';
   });
 </script>
-
-<div>
-  <SlimNavigator />
-</div>
 
 <div class="mt-[12lvh] flex flex-row justify-center items-start">
   <div>
@@ -277,7 +281,6 @@
             <Button class="py-6 px-10" variant="outline" type="button" disabled={$requestInProcess}>
               <svg class="h-6 w-6" version="1.1" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <title>google [#178]</title>
-                <desc>Created with Sketch.</desc>
                 <g fill="none" fill-rule="evenodd">
                 <g transform="translate(-300 -7399)" fill="#000">
                 <g transform="translate(56 160)">
@@ -408,8 +411,6 @@
             </Button>
             <Button class="py-6 px-10" variant="outline" type="button" disabled={$requestInProcess}>
               <svg class="h-6 w-6" version="1.1" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <title>google [#178]</title>
-                <desc>Created with Sketch.</desc>
                 <g fill="none" fill-rule="evenodd">
                 <g transform="translate(-300 -7399)" fill="#000">
                 <g transform="translate(56 160)">
