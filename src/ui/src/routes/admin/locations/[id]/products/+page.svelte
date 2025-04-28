@@ -11,33 +11,60 @@
     import { goto } from "$app/navigation";
     import { writable } from "svelte/store";
     import { Skeleton } from "$lib/components/ui/skeleton";
+    import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
 
     const locationId = $page.params.id;
+    let filterStatus = writable("all");
     let products = productState.getAsyncState();
-    let locationProducts = [] as any[];
+    let filteredProducts = writable<any[]>([]);
     let loading = writable(true);
     // Pagination
     let currentPage = 1;
     let itemsPerPage = 10;
-    
-    $: totalPages = Math.ceil(locationProducts.length / itemsPerPage);
-    $: paginatedProducts = locationProducts.slice(
-        (currentPage - 1) * itemsPerPage, 
-        currentPage * itemsPerPage
+
+    $: totalPages = Math.ceil($filteredProducts.length / itemsPerPage);
+    $: paginatedProducts = $filteredProducts.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage,
     );
-    
+
     function prevPage() {
         if (currentPage > 1) currentPage--;
     }
-    
+
     function nextPage() {
         if (currentPage < totalPages) currentPage++;
     }
 
+    function handleFilterStatus(value: string) {
+        if (value === "available") {
+            filteredProducts.set(
+                $products?.filter(
+                    (product) =>
+                        product.location === locationId && !product.isRented,
+                ) || [],
+            );
+        } else if (value === "rented") {
+            filteredProducts.set(
+                $products?.filter(
+                    (product) =>
+                        product.location === locationId && !!product.isRented,
+                ) || [],
+            );
+        } else {
+            filteredProducts.set(
+                $products?.filter(
+                    (product) => product.location === locationId,
+                ) || [],
+            );
+        }
+
+        filterStatus.set(value);
+        currentPage = 1;
+    }
+
     $: if ($products) {
-        locationProducts = $products.filter(
-            (product) => product.location === locationId,
-        );
+        handleFilterStatus("all");
     }
 
     onMount(async () => {
@@ -46,6 +73,7 @@
                 await fetchProducts(),
                 new Promise((resolve) => setTimeout(resolve, 150)),
             ]);
+            handleFilterStatus("all");
         } catch {
         } finally {
             loading.set(false);
@@ -54,36 +82,63 @@
 </script>
 
 <div class="mx-auto">
-    <div class="flex justify-end mb-3 gap-3">
-        <Button variant="outline">
-            <HamburgerMenu class="h-4 w-4 mr-2" />
-            {$t("common.filter")}
-        </Button>
-        <Button variant="outline">
-            <File class="h-4 w-4 mr-2" />
-            {$t("common.export")}
-        </Button>
-        <Button
-            variant="default"
-            on:click={() => {
-                goto(
-                    ROUTES.ADMIN_PRODUCT_CREATE.replace(
-                        "{locationId}",
-                        locationId,
-                    ),
-                );
-            }}
-        >
-            <PlusCircled class="h-4 w-4 mr-2" />
-            {$t("admin.products.add")}
-        </Button>
+    <div class="flex justify-between mb-3 gap-3">
+        <div class="flex items-start space-x-2">
+            <ToggleGroup.Root
+                type="single"
+                value={$filterStatus}
+                onValueChange={(value) => value && handleFilterStatus(value)}
+                variant="outline"
+                class="rounded-md bg-gray-100 p-1"
+            >
+                <ToggleGroup.Item
+                    class="border-none rounded-md data-[state=on]:bg-white"
+                    value="all">{$t("admin.statistics.all")}</ToggleGroup.Item
+                >
+                <ToggleGroup.Item
+                    class="border-none rounded-md data-[state=on]:bg-white"
+                    value="available"
+                    >{$t("admin.statistics.available")}</ToggleGroup.Item
+                >
+                <ToggleGroup.Item
+                    class="border-none rounded-md data-[state=on]:bg-white"
+                    value="rented"
+                    >{$t("admin.statistics.rented")}</ToggleGroup.Item
+                >
+            </ToggleGroup.Root>
+        </div>
+
+        <div class="flex justify-end mb-3 gap-3">
+            <Button variant="outline">
+                <HamburgerMenu class="h-4 w-4 mr-2" />
+                {$t("common.filter")}
+            </Button>
+            <Button variant="outline">
+                <File class="h-4 w-4 mr-2" />
+                {$t("common.export")}
+            </Button>
+            <Button
+                variant="default"
+                on:click={() => {
+                    goto(
+                        ROUTES.ADMIN_PRODUCT_CREATE.replace(
+                            "{locationId}",
+                            locationId,
+                        ),
+                    );
+                }}
+            >
+                <PlusCircled class="h-4 w-4 mr-2" />
+                {$t("admin.products.add")}
+            </Button>
+        </div>
     </div>
 
     {#if $loading}
         <div class="flex justify-center items-center h-full">
             <Skeleton class="w-full h-[30rem]" />
         </div>
-    {:else if locationProducts && locationProducts.length > 0}
+    {:else if $filteredProducts && $filteredProducts.length > 0}
         <div class="rounded-md border">
             <Table.Root>
                 <Table.Header>
@@ -135,25 +190,52 @@
                     {/each}
                 </Table.Body>
             </Table.Root>
-            
+
             <!-- Simple Pagination -->
             <div class="flex items-center justify-between px-4 py-3 border-t">
                 <div class="text-sm text-gray-700">
-                    {$t("common.pagination.showing")} <span class="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> {$t("common.pagination.to")} 
-                    <span class="font-medium">{Math.min(currentPage * itemsPerPage, locationProducts.length)}</span> {$t("common.pagination.of")} 
-                    <span class="font-medium">{locationProducts.length}</span> {$t("common.pagination.entries")}
+                    {$t("common.pagination.showing")}
+                    <span class="font-medium"
+                        >{(currentPage - 1) * itemsPerPage + 1}</span
+                    >
+                    {$t("common.pagination.to")}
+                    <span class="font-medium"
+                        >{Math.min(
+                            currentPage * itemsPerPage,
+                            $filteredProducts.length,
+                        )}</span
+                    >
+                    {$t("common.pagination.of")}
+                    <span class="font-medium">{$filteredProducts.length}</span>
+                    {$t("common.pagination.entries")}
                 </div>
-                
+
                 <div class="flex gap-2">
-                    <Button variant="outline" size="sm" disabled={currentPage === 1} on:click={prevPage}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === 1}
+                        on:click={prevPage}
+                    >
                         {$t("common.pagination.previous")}
                     </Button>
-                    
+
                     <div class="flex items-center">
-                        <span class="mx-2 text-sm">{$t("common.pagination.page")} {currentPage} {$t("common.pagination.of")} {totalPages || 1}</span>
+                        <span class="mx-2 text-sm"
+                            >{$t("common.pagination.page")}
+                            {currentPage}
+                            {$t("common.pagination.of")}
+                            {totalPages || 1}</span
+                        >
                     </div>
-                    
-                    <Button variant="outline" size="sm" disabled={currentPage === totalPages || totalPages === 0} on:click={nextPage}>
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === totalPages ||
+                            totalPages === 0}
+                        on:click={nextPage}
+                    >
                         {$t("common.pagination.next")}
                     </Button>
                 </div>

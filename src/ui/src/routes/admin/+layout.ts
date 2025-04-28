@@ -6,11 +6,11 @@ import { firstValueFrom, map } from "rxjs";
 import { configState } from "$lib/states/config";
 import { type AppConfig, AppConfigKey } from "$lib/states/status";
 
-export const load = async ({ parent }) => {
+export const load = async ({ parent, url }) => {
   if (browser) {
     await parent();
 
-    firstValueFrom(configState.getConfig<AppConfig>(AppConfigKey)
+    await firstValueFrom(configState.getConfig<AppConfig>(AppConfigKey)
       .pipe(map((config) => config?.user))).then(async isUserEnabled => {
         if (!isUserEnabled) {
           goto(ROUTES.HOME);
@@ -19,10 +19,12 @@ export const load = async ({ parent }) => {
         if (!authenticated) {
           goto(ROUTES.HOME);
         }
-
+        
         const isAdmin = await isUserAdmin();
         if (!isAdmin) {
           goto(ROUTES.HOME);
+        } else if (url.pathname.endsWith(ROUTES.ADMIN)) {
+          goto(ROUTES.ADMIN_STATISTICS);
         }
       })
   }

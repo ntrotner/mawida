@@ -10,13 +10,17 @@
 
 package openapi
 
+import (
+	"template_backend/infrastructure/validators"
+)
+
 type PaymentInstructions struct {
 	PaymentTransactionId string `json:"paymentTransactionId"`
 
 	PaymentMethodId PaymentMethod `json:"paymentMethodId"`
 
 	// Dynamic attributes for the payment instructions
-	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty"`
+	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty" validate:"dynamicAttributes"`
 }
 
 // AssertPaymentInstructionsRequired checks if the required fields are not zero-ed
@@ -36,5 +40,5 @@ func AssertPaymentInstructionsRequired(obj PaymentInstructions) error {
 
 // AssertPaymentInstructionsConstraints checks if the values respects the defined constraints
 func AssertPaymentInstructionsConstraints(obj PaymentInstructions) error {
-	return nil
+	return validators.Validate.Struct(obj)
 }

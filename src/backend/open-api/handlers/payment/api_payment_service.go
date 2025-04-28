@@ -82,7 +82,7 @@ func (s *PaymentAPIService) Webhook(ctx context.Context, r *http.Request) (model
 		}
 
 		// update rent contract status
-		contract := database_rent_contract.UpdateRentContractStatusFromPaymentIdentifier(ctx, data.ID, database_rent_contract.RentContractStatusActive)
+		contract := database_rent_contract.UpdateRentContractStatusFromPaymentIdentifier(ctx, data.ID, database_rent_contract.RentContractStatusPickupPending)
 		if contract == nil {
 			log.Error().Msg("Failed to update rent contract status")
 		}

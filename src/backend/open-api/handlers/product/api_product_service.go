@@ -46,11 +46,42 @@ func (s *ProductAPIService) ProductsGet(ctx context.Context, r *http.Request) (m
 	user, _ := openapi.IsUserAuthorized(ctx, r)
 	admin, _ := openapi.IsAdmin(ctx, r)
 	products := database_product.GetAllProducts(ctx)
+	productsPublic := make([]models.ProductPublic, len(products))
 
 	if admin == nil && user == nil {
 		for i := range products {
 			database_product.SanitizeProduct(&products[i])
+
+			productsPublic[i] = models.ProductPublic{
+				ID:          products[i].ID,
+				Name:        products[i].Name,
+				Description: products[i].Description,
+				Location:    products[i].Location,
+				Pricing: models.ProductPricing{
+					Price:   products[i].Pricing.Price,
+					Deposit: products[i].Pricing.Deposit,
+				},
+				IsRented:            products[i].IsRented,
+				IsCurrentUserRenter: false,
+			}
+
+			for _, image := range products[i].Images {
+				productsPublic[i].Images = append(productsPublic[i].Images, models.ProductImagesInner{
+					ID:   image.ID,
+					Name: image.Name,
+					Data: image.Data,
+				})
+				break
+			}
+
+			dynamicAttributes := make(map[string]interface{})
+			for key, value := range products[i].DynamicAttributes {
+				dynamicAttributes[key] = value
+			}
+			productsPublic[i].DynamicAttributes = dynamicAttributes
 		}
+
+		return models.Response(200, productsPublic), nil
 	}
 
 	if admin == nil && user != nil {
@@ -61,7 +92,38 @@ func (s *ProductAPIService) ProductsGet(ctx context.Context, r *http.Request) (m
 			if products[i].RenterInfo.UserID == user.ID {
 				products[i].RenterInfo = renterInfo
 			}
+
+			productsPublic[i] = models.ProductPublic{
+				ID:          products[i].ID,
+				Name:        products[i].Name,
+				Description: products[i].Description,
+				Location:    products[i].Location,
+				Pricing: models.ProductPricing{
+					Price:   products[i].Pricing.Price,
+					Deposit: products[i].Pricing.Deposit,
+				},
+				IsRented:            products[i].IsRented,
+				IsCurrentUserRenter: user.ID == products[i].RenterInfo.UserID,
+			}
+
+			for _, image := range products[i].Images {
+				productsPublic[i].Images = append(productsPublic[i].Images, models.ProductImagesInner{
+					ID:   image.ID,
+					Name: image.Name,
+					Data: image.Data,
+				})
+
+				break
+			}
+
+			dynamicAttributes := make(map[string]interface{})
+			for key, value := range products[i].DynamicAttributes {
+				dynamicAttributes[key] = value
+			}
+			productsPublic[i].DynamicAttributes = dynamicAttributes
 		}
+
+		return models.Response(200, productsPublic), nil
 	}
 
 	return models.Response(200, products), nil
@@ -73,6 +135,11 @@ func (s *ProductAPIService) ProductsPost(ctx context.Context, product models.Pro
 	admin, _ := openapi.IsAdmin(ctx, r)
 	if admin == nil {
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "100", Message: "Forbidden. Admin access required."}}}), nil
+	}
+
+	existsLocation := database_location.FindLocationById(ctx, product.Location)
+	if existsLocation == nil {
+		return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "404", Message: "Location not found"}}}), nil
 	}
 
 	// Convert OpenAPI model to database model
@@ -266,6 +333,43 @@ func (s *ProductAPIService) ProductsProductIdGet(ctx context.Context, productId 
 
 	if admin == nil && user == nil {
 		database_product.SanitizeProduct(product)
+
+		productsPublic := models.ProductPublic{
+			ID:          product.ID,
+			Name:        product.Name,
+			Description: product.Description,
+			Location:    product.Location,
+			Pricing: models.ProductPricing{
+				Price:   product.Pricing.Price,
+				Deposit: product.Pricing.Deposit,
+			},
+			IsRented:            product.IsRented,
+			IsCurrentUserRenter: false,
+		}
+
+		for _, image := range product.Images {
+			productsPublic.Images = append(productsPublic.Images, models.ProductImagesInner{
+				ID:   image.ID,
+				Name: image.Name,
+				Data: image.Data,
+			})
+		}
+
+		for _, document := range product.Documents {
+			productsPublic.Documents = append(productsPublic.Documents, models.ProductDocumentsInner{
+				ID:   document.ID,
+				Name: document.Name,
+				Data: document.Data,
+			})
+		}
+
+		dynamicAttributes := make(map[string]interface{})
+		for key, value := range product.DynamicAttributes {
+			dynamicAttributes[key] = value
+		}
+		productsPublic.DynamicAttributes = dynamicAttributes
+
+		return models.Response(200, productsPublic), nil
 	}
 
 	if admin == nil && user != nil {
@@ -275,6 +379,43 @@ func (s *ProductAPIService) ProductsProductIdGet(ctx context.Context, productId 
 		if product.RenterInfo.UserID == user.ID {
 			product.RenterInfo = renterInfo
 		}
+
+		productsPublic := models.ProductPublic{
+			ID:          product.ID,
+			Name:        product.Name,
+			Description: product.Description,
+			Location:    product.Location,
+			Pricing: models.ProductPricing{
+				Price:   product.Pricing.Price,
+				Deposit: product.Pricing.Deposit,
+			},
+			IsRented:            product.IsRented,
+			IsCurrentUserRenter: user.ID == product.RenterInfo.UserID,
+		}
+
+		for _, image := range product.Images {
+			productsPublic.Images = append(productsPublic.Images, models.ProductImagesInner{
+				ID:   image.ID,
+				Name: image.Name,
+				Data: image.Data,
+			})
+		}
+
+		for _, document := range product.Documents {
+			productsPublic.Documents = append(productsPublic.Documents, models.ProductDocumentsInner{
+				ID:   document.ID,
+				Name: document.Name,
+				Data: document.Data,
+			})
+		}
+
+		dynamicAttributes := make(map[string]interface{})
+		for key, value := range product.DynamicAttributes {
+			dynamicAttributes[key] = value
+		}
+		productsPublic.DynamicAttributes = dynamicAttributes
+
+		return models.Response(200, productsPublic), nil
 	}
 
 	return models.Response(200, product), nil
@@ -314,7 +455,7 @@ func (s *ProductAPIService) ProductsProductIdRentPost(ctx context.Context, produ
 		return models.Response(400, models.Error{ErrorMessages: []models.Message{{Code: "200", Message: "Start date must be today."}}}), nil
 	}
 
-	paymentTransaction, err := database_payments.InitializePaymentTransaction(ctx, user.CustomerIdentifier.ID, product.ProductIdentifier.ID, product.Pricing.Price, product.Pricing.Deposit, product.ProductIdentifier.Mode)
+	paymentTransaction, err := database_payments.InitializePaymentTransaction(ctx, user.CustomerIdentifier.ID, product.ProductIdentifier.ID, product.Pricing.Price*int64(days), product.Pricing.Deposit, product.ProductIdentifier.Mode)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to initialize payment transaction")
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to initiate payment session"}}}), nil

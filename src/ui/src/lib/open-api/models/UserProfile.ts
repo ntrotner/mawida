@@ -74,7 +74,7 @@ export function UserProfileFromJSONTyped(json: any, ignoreDiscriminator: boolean
         
         'email': json['email'],
         'role': json['role'],
-        'id': !exists(json, 'id') ? undefined : json['id'],
+        'id': !exists(json, 'id') ? !exists(json, '_id') ? undefined : json['_id'] : json['id'],
     };
 }
 

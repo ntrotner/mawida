@@ -9,6 +9,11 @@
     import { map, firstValueFrom, filter } from "rxjs";
     import { Skeleton } from "$lib/components/ui/skeleton";
     import { writable } from "svelte/store";
+    import * as Menubar from "$lib/components/ui/menubar/index.js";
+    import { DotsHorizontal } from "svelte-radix";
+    import { promotoToCustomer } from "$lib/states/administration/effects";
+    import { ROUTES } from "$lib/routes";
+    import { goto } from "$app/navigation";
 
     let users = usersState.getAsyncState();
     let loading = writable(true);
@@ -90,9 +95,6 @@
                             >{$t("admin.customers.table.email")}</Table.Head
                         >
                         <Table.Head
-                        >{$t("admin.customers.table.products")}</Table.Head
-                        >
-                        <Table.Head
                             >{$t("admin.customers.table.role")}</Table.Head
                         >
                         <Table.Head class="text-right"
@@ -105,17 +107,6 @@
                         <Table.Row>
                             <Table.Cell>{customer.email || "-"}</Table.Cell>
                             <Table.Cell>
-                                <ul>
-                                    {#await productsForCustomer(customer.id || "")}
-                                        <li>Loading...</li>
-                                    {:then products}
-                                        {#each products as product}
-                                            <li>{product.name}</li>
-                                        {/each}
-                                    {/await}
-                                </ul>
-                            </Table.Cell>
-                            <Table.Cell>
                                 <span
                                     class="inline-flex items-center px-2.5 py-0.5"
                                 >
@@ -125,7 +116,33 @@
                                 </span>
                             </Table.Cell>
                             <Table.Cell class="flex flex-col items-end">
-                                    <EnvelopeClosed class="h-4 w-4 mr-4" />
+                                <div class="flex justify-end gap-2">
+                                    <Menubar.Root class="p-0 border-none bg-transparent">
+                                      <Menubar.Menu>
+                                        <Menubar.Trigger>
+                                          <DotsHorizontal class="w-4 h-4" />
+                                        </Menubar.Trigger>
+                                        <Menubar.Content>
+                                            <Menubar.Item
+                                                on:click={() => {
+                                                    goto(ROUTES.ADMIN_CUSTOMER_DETAIL.replace("{customerId}", customer.id || ""));
+                                                }}
+                                            >
+                                                {$t("admin.customers.details")}
+                                            </Menubar.Item>
+                                            {#if customer.role === "unverified"}
+                                          <Menubar.Item
+                                            on:click={() => {
+                                                promotoToCustomer(customer.id || "");
+                                            }}
+                                          >
+                                            {$t("admin.customers.approve")}
+                                          </Menubar.Item>
+                                          {/if}
+                                        </Menubar.Content>
+                                      </Menubar.Menu>
+                                    </Menubar.Root>
+                                  </div>
                             </Table.Cell>
                         </Table.Row>
                     {/each}

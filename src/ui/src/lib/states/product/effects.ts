@@ -1,5 +1,6 @@
 import { ProductApi, type Success, type ModelError, ResponseError, type Product, type ProductsProductIdGet200Response } from "$lib/open-api";
 import { productState } from "./product";
+import type { RentProductFormular, RentProductConfirmation } from "$lib/open-api/models";
 
 /**
  * Fetch all products.
@@ -19,7 +20,9 @@ export async function fetchProducts(): Promise<Product[]> {
  */
 export async function fetchProduct(productId: string): Promise<ProductsProductIdGet200Response> {
   const productApi = new ProductApi();
-  return productApi.productsProductIdGet({ productId });
+  const product = await productApi.productsProductIdGet({ productId });
+  productState.addProduct(product);
+  return product;
 }
 
 /**
@@ -59,5 +62,25 @@ export async function deleteProduct(productId: string): Promise<Success & ModelE
       errorResponse = await e.response.json() as ModelError;
     }
     return errorResponse;
+  }
+}
+
+/**
+ * Rent a product.
+ * @param {string} productId - The ID of the product to rent.
+ * @param {RentProductFormular} rentFormular - The rental formular with required details.
+ * @returns {Promise<RentProductConfirmation>} - A promise that resolves to the rent confirmation.
+ */
+export async function rentProduct(productId: string, rentFormular: RentProductFormular): Promise<RentProductConfirmation | undefined> {
+  const productApi = new ProductApi();
+  try {
+    const response = await productApi.productsProductIdRentPost({ productId, rentProductFormular: rentFormular });
+    return response;
+  } catch (e: unknown) {
+    let errorResponse: ModelError | undefined = undefined;
+    if (e instanceof ResponseError) {
+      errorResponse = await e.response.json() as ModelError;
+    }
+    throw errorResponse;
   }
 } 
