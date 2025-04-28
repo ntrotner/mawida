@@ -20,12 +20,6 @@ import { exists, mapValues } from '../runtime';
  */
 export interface ReturnProduct {
     /**
-     * Unique identifier for the user returning the product
-     * @type {string}
-     * @memberof ReturnProduct
-     */
-    userId: string;
-    /**
      * 
      * @type {Array<string>}
      * @memberof ReturnProduct
@@ -44,7 +38,6 @@ export interface ReturnProduct {
  */
 export function instanceOfReturnProduct(value: object): boolean {
     let isInstance = true;
-    isInstance = isInstance && "userId" in value;
     isInstance = isInstance && "returnImages" in value;
     isInstance = isInstance && "additionalNotes" in value;
 
@@ -61,7 +54,6 @@ export function ReturnProductFromJSONTyped(json: any, ignoreDiscriminator: boole
     }
     return {
         
-        'userId': json['userId'],
         'returnImages': json['returnImages'],
         'additionalNotes': json['additionalNotes'],
     };
@@ -76,7 +68,6 @@ export function ReturnProductToJSON(value?: ReturnProduct | null): any {
     }
     return {
         
-        'userId': value.userId,
         'returnImages': value.returnImages,
         'additionalNotes': value.additionalNotes,
     };

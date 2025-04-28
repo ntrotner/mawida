@@ -20,7 +20,7 @@ type Product struct {
 	Name string `json:"name" validate:"required,min=2,max=100"`
 
 	// Description of the product
-	Description string `json:"description" validate:"required,min=10,max=1000"`
+	Description string `json:"description" validate:"required,min=0,max=1000"`
 
 	// List of base64 encoded image data with IDs and names
 	Images []ProductImagesInner `json:"images,omitempty" validate:"omitempty"`

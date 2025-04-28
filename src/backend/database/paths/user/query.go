@@ -132,3 +132,24 @@ func AuthenticateUserById(ctx context.Context, id string, password string) *User
 
 	return user
 }
+
+func GetAllUsers(ctx context.Context) []UserProfile {
+	options := createFindUserQuery(nil, nil, []interface{}{})
+	options.Limit = 5000
+	rows, err := DatabaseUser.Find(ctx, options)
+	if err != nil {
+		log.Error().Msg(err.Error())
+	}
+	defer rows.Close()
+
+	users := []UserProfile{}
+	for rows.Next() {
+		var user UserProfile
+		if err := rows.ScanDoc(&user); err != nil {
+			log.Error().Msg(err.Error())
+		}
+		users = append(users, user)
+	}
+
+	return users
+}

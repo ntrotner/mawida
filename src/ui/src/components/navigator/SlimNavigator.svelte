@@ -18,6 +18,7 @@
 
   const subscriptions: Unsubscriber[] = [];
   const user = userState.getAsyncState();
+  const isAdmin = userState.isAdmin();
   const mobile = appState
     .observable()
     .pipe(map((state) => (state?.width || 0) <= 640));
@@ -129,6 +130,11 @@
                 {:else}
                   <Menubar.Item on:click={() => redirect(ROUTES.LOGIN)}
                     >{$t("common.nav-menu.login")}</Menubar.Item
+                  >
+                {/if}
+                {#if $isAdmin}
+                  <Menubar.Item on:click={() => redirect(ROUTES.ADMIN)}
+                    >{$t("common.nav-menu.admin")}</Menubar.Item
                   >
                 {/if}
               </Menubar.Content>

@@ -13,6 +13,9 @@ package openapi
 // ProductPublicAllOfRenterInfo - Information about the rental period
 type ProductPublicAllOfRenterInfo struct {
 
+	// User ID of the renter
+	UserId string `json:"userId,omitempty"`
+
 	// Start date of the rental period
 	RentalStartDate string `json:"rentalStartDate,omitempty"`
 

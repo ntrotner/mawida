@@ -25,7 +25,31 @@ export interface UserProfile {
      * @memberof UserProfile
      */
     email: string;
+    /**
+     * Role to change to
+     * @type {string}
+     * @memberof UserProfile
+     */
+    role: UserProfileRoleEnum;
+    /**
+     * Unique identifier for the user
+     * @type {string}
+     * @memberof UserProfile
+     */
+    id?: string;
 }
+
+
+/**
+ * @export
+ */
+export const UserProfileRoleEnum = {
+    Admin: 'admin',
+    User: 'user',
+    Unverified: 'unverified'
+} as const;
+export type UserProfileRoleEnum = typeof UserProfileRoleEnum[keyof typeof UserProfileRoleEnum];
+
 
 /**
  * Check if a given object implements the UserProfile interface.
@@ -33,6 +57,7 @@ export interface UserProfile {
 export function instanceOfUserProfile(value: object): boolean {
     let isInstance = true;
     isInstance = isInstance && "email" in value;
+    isInstance = isInstance && "role" in value;
 
     return isInstance;
 }
@@ -48,6 +73,8 @@ export function UserProfileFromJSONTyped(json: any, ignoreDiscriminator: boolean
     return {
         
         'email': json['email'],
+        'role': json['role'],
+        'id': !exists(json, 'id') ? undefined : json['id'],
     };
 }
 
@@ -61,6 +88,8 @@ export function UserProfileToJSON(value?: UserProfile | null): any {
     return {
         
         'email': value.email,
+        'role': value.role,
+        'id': value.id,
     };
 }
 

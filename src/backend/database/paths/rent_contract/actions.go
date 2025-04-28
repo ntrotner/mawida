@@ -9,30 +9,31 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func CreateRentContract(ctx context.Context, productId string, userId string, rentalStartDate int64, rentalEndDate int64, price int64, deposit int64, totalAmount int64, paymentMethodId string, pickupLocationId string, returnLocationId string, additionalNotes string, checkoutSessionIdentifier *paymentTypes.CheckoutSessionIdentifier, dynamicAttributes map[string]interface{}, paymentInstruction *PaymentInstruction) *RentContract {
+func CreateRentContract(ctx context.Context, productId string, userId string, rentalStartDate int64, rentalEndDate int64, price int64, deposit int64, totalAmount int64, paymentMethodId string, paymentTransactionId string, pickupLocationId string, returnLocationId string, additionalNotes string, checkoutSessionIdentifier *paymentTypes.CheckoutSessionIdentifier, dynamicAttributes map[string]interface{}, paymentInstruction *PaymentInstruction) *RentContract {
 	if DatabaseRentContract == nil {
 		return nil
 	}
 
 	contract := &RentContract{
-		ID:                 uuid.NewString(),
-		ProductID:          productId,
-		UserID:             userId,
-		RentalStartDate:    rentalStartDate,
-		RentalEndDate:      rentalEndDate,
-		Status:             RentContractStatusConfirmed,
-		Price:              price,
-		Deposit:            deposit,
-		TotalAmount:        totalAmount,
-		PaymentMethodID:    paymentMethodId,
-		PickupLocationID:   pickupLocationId,
-		ReturnLocationID:   returnLocationId,
-		AdditionalNotes:    additionalNotes,
-		DynamicAttributes:  dynamicAttributes,
-		CreatedAt:          time.Now().Unix(),
-		UpdatedAt:          time.Now().Unix(),
-		PaymentIdentifier:  checkoutSessionIdentifier,
-		PaymentInstruction: paymentInstruction,
+		ID:                   uuid.NewString(),
+		ProductID:            productId,
+		UserID:               userId,
+		RentalStartDate:      rentalStartDate,
+		RentalEndDate:        rentalEndDate,
+		Status:               RentContractStatusConfirmed,
+		Price:                price,
+		Deposit:              deposit,
+		TotalAmount:          totalAmount,
+		PaymentMethodID:      paymentMethodId,
+		PaymentTransactionID: paymentTransactionId,
+		PickupLocationID:     pickupLocationId,
+		ReturnLocationID:     returnLocationId,
+		AdditionalNotes:      additionalNotes,
+		DynamicAttributes:    dynamicAttributes,
+		CreatedAt:            time.Now().Unix(),
+		UpdatedAt:            time.Now().Unix(),
+		PaymentIdentifier:    checkoutSessionIdentifier,
+		PaymentInstruction:   paymentInstruction,
 	}
 
 	_, err := DatabaseRentContract.Put(ctx, contract.ID, contract)
@@ -110,14 +111,14 @@ func UpdateRentContractStatus(ctx context.Context, id string, newStatus RentCont
 	return contract
 }
 
-func UpdateRentContractStatusFromCheckoutSession(ctx context.Context, checkoutSessionId string, status RentContractStatus) *RentContract {
+func UpdateRentContractStatusFromPaymentIdentifier(ctx context.Context, paymentIdentifier string, status RentContractStatus) *RentContract {
 	if DatabaseRentContract == nil {
 		return nil
 	}
 
-	contract := FindRentContractByCheckoutSessionId(ctx, checkoutSessionId)
+	contract := FindRentContractByPaymentIdentifier(ctx, paymentIdentifier)
 	if contract == nil {
-		log.Error().Str("id", checkoutSessionId).Msg("Rent contract not found")
+		log.Error().Str("paymentIdentifier", paymentIdentifier).Msg("Rent contract not found")
 		return nil
 	}
 

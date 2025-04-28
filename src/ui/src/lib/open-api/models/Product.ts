@@ -43,7 +43,7 @@ export interface Product {
      * @type {string}
      * @memberof Product
      */
-    iD?: string;
+    id?: string;
     /**
      * Name of the product
      * @type {string}
@@ -111,7 +111,7 @@ export function ProductFromJSONTyped(json: any, ignoreDiscriminator: boolean): P
     }
     return {
         
-        'iD': !exists(json, 'ID') ? undefined : json['ID'],
+        'id': !exists(json, 'id') ? undefined : json['id'],
         'name': json['name'],
         'description': json['description'],
         'images': !exists(json, 'images') ? undefined : ((json['images'] as Array<any>).map(ProductImagesInnerFromJSON)),
@@ -131,7 +131,7 @@ export function ProductToJSON(value?: Product | null): any {
     }
     return {
         
-        'ID': value.iD,
+        'id': value.id,
         'name': value.name,
         'description': value.description,
         'images': value.images === undefined ? undefined : ((value.images as Array<any>).map(ProductImagesInnerToJSON)),

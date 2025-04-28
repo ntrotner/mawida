@@ -17,6 +17,7 @@ services:
       - '443:443'
     volumes:
       - ./dockerfiles/nginx:/data
+      - nginx-proxy-manager_letsencrypt:/etc/letsencrypt
     depends_on:
       - mawida_ui
       - mawida_backend
@@ -77,6 +78,11 @@ services:
     profiles:
       - local
       - deployment
+
+
+volumes:
+  nginx-proxy-manager_letsencrypt:
+    name: 'nginx-proxy-manager_letsencrypt'
 
 networks:
   host_network:

@@ -17,6 +17,7 @@ import (
 	openapi "template_backend/open-api/authentication"
 	models "template_backend/open-api/models"
 
+	database_payments "template_backend/database/paths/payments"
 	database_product "template_backend/database/paths/product"
 	database_rent_contract "template_backend/database/paths/rent_contract"
 
@@ -50,8 +51,9 @@ func (s *RentalAPIService) RentalsGet(ctx context.Context, r *http.Request) (mod
 		}
 
 		paymentInstruction := models.PaymentInstructions{
-			PaymentMethodId:   models.PaymentMethod(contract.PaymentInstruction.PaymentMethodID),
-			DynamicAttributes: contract.PaymentInstruction.DynamicAttributes,
+			PaymentTransactionId: contract.PaymentTransactionID,
+			PaymentMethodId:      models.PaymentMethod(contract.PaymentInstruction.PaymentMethodID),
+			DynamicAttributes:    contract.PaymentInstruction.DynamicAttributes,
 		}
 		response = append(response, models.RentContract{
 			Id:                  contract.ID,
@@ -140,8 +142,9 @@ func (s *RentalAPIService) RentalsRentContractIdGet(ctx context.Context, rentCon
 	}
 
 	paymentInstruction := models.PaymentInstructions{
-		PaymentMethodId:   models.PaymentMethod(contract.PaymentInstruction.PaymentMethodID),
-		DynamicAttributes: contract.PaymentInstruction.DynamicAttributes,
+		PaymentTransactionId: contract.PaymentTransactionID,
+		PaymentMethodId:      models.PaymentMethod(contract.PaymentInstruction.PaymentMethodID),
+		DynamicAttributes:    contract.PaymentInstruction.DynamicAttributes,
 	}
 	response := models.RentContract{
 		Id:                  contract.ID,
@@ -253,6 +256,11 @@ func (s *RentalAPIService) RentalsRentContractIdReturnPost(ctx context.Context, 
 	updatedProduct := database_product.UpdateProduct(ctx, product)
 	if updatedProduct == nil {
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update product rental status"}}}), nil
+	}
+
+	_, err := database_payments.ReturnPaymentTransaction(ctx, contract.PaymentTransactionID)
+	if err != nil {
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to return payment transaction"}}}), nil
 	}
 
 	return models.Response(200, models.Success{}), nil

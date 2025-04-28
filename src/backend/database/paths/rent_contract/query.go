@@ -188,6 +188,8 @@ func FindRentContractsByProductId(ctx context.Context, productId string) []*Rent
 			"dynamicAttributes",
 			"createdAt",
 			"updatedAt",
+			"paymentIdentifier",
+			"paymentInstruction",
 		},
 	}
 
@@ -237,6 +239,8 @@ func FindAllRentContracts(ctx context.Context) []*RentContract {
 			"dynamicAttributes",
 			"createdAt",
 			"updatedAt",
+			"paymentIdentifier",
+			"paymentInstruction",
 		},
 	}
 
@@ -258,4 +262,108 @@ func FindAllRentContracts(ctx context.Context) []*RentContract {
 	}
 
 	return contracts
+}
+
+func FindRentContractByPaymentTransactionId(ctx context.Context, paymentTransactionId string) *RentContract {
+	if DatabaseRentContract == nil {
+		log.Error().Msg("Database connection not initialized")
+		return nil
+	}
+
+	query := database_common.Query{
+		Selector: map[string]interface{}{
+			"paymentTransactionId": map[string]interface{}{"$eq": paymentTransactionId},
+		},
+		Fields: []interface{}{
+			"_id",
+			"_rev",
+			"productId",
+			"userId",
+			"rentalStartDate",
+			"rentalEndDate",
+			"status",
+			"price",
+			"deposit",
+			"totalAmount",
+			"paymentMethodId",
+			"pickupLocationId",
+			"returnLocationId",
+			"additionalNotes",
+			"dynamicAttributes",
+			"createdAt",
+			"updatedAt",
+			"paymentIdentifier",
+			"paymentInstruction",
+		},
+	}
+
+	rows, err := DatabaseRentContract.Find(ctx, query)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to retrieve rent contract")
+		return nil
+	}
+	defer rows.Close()
+
+	var contract RentContract
+	if rows.Next() {
+		if err := rows.ScanDoc(&contract); err != nil {
+			log.Error().Err(err).Msg("Failed to scan rent contract document")
+			return nil
+		}
+		return &contract
+	}
+
+	return nil
+}
+
+func FindRentContractByPaymentIdentifier(ctx context.Context, paymentIdentifier string) *RentContract {
+	if DatabaseRentContract == nil {
+		log.Error().Msg("Database connection not initialized")
+		return nil
+	}
+
+	query := database_common.Query{
+		Selector: map[string]interface{}{
+			"paymentIdentifier.ID": map[string]interface{}{"$eq": paymentIdentifier},
+		},
+		Fields: []interface{}{
+			"_id",
+			"_rev",
+			"productId",
+			"userId",
+			"rentalStartDate",
+			"rentalEndDate",
+			"status",
+			"price",
+			"deposit",
+			"totalAmount",
+			"paymentMethodId",
+			"pickupLocationId",
+			"returnLocationId",
+			"additionalNotes",
+			"dynamicAttributes",
+			"createdAt",
+			"updatedAt",
+			"paymentIdentifier",
+			"paymentInstruction",
+		},
+	}
+
+	rows, err := DatabaseRentContract.Find(ctx, query)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to retrieve rent contract")
+		return nil
+	}
+	defer rows.Close()
+
+	var contract RentContract
+	if rows.Next() {
+		if err := rows.ScanDoc(&contract); err != nil {
+			log.Error().Err(err).Msg("Failed to scan rent contract document")
+			return nil
+		}
+		return &contract
+	}
+
+	return nil
 }

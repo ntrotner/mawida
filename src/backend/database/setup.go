@@ -80,6 +80,7 @@ func Connect(ctx context.Context) {
 
 	go database_user.SetupUser(ctx, databases)
 	go database_location.SetupLocation(ctx, databases)
+	go database_payments.SetupPayments(ctx, databases)
 	go database_product.SetupProduct(ctx, databases)
 	go database_rent_contract.SetupRentContract(ctx, databases)
 }

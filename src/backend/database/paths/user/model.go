@@ -25,4 +25,5 @@ type UserProfile struct {
 type PublicUserProfile struct {
 	ID    string `json:"_id,omitempty"`
 	Email string `json:"email,omitempty"`
+	Role  string `json:"role,omitempty"`
 }

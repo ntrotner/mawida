@@ -75,16 +75,16 @@ func (s *PaymentAPIService) Webhook(ctx context.Context, r *http.Request) (model
 	}
 
 	if event.Type == stripe.EventTypeCheckoutSessionCompleted {
-		// update rent contract status
-		contract := database_rent_contract.UpdateRentContractStatusFromCheckoutSession(ctx, data.ID, database_rent_contract.RentContractStatusActive)
-		if contract == nil {
-			log.Error().Msg("Failed to update rent contract status")
-		}
-
 		paymentTransactionId, ok := data.Metadata["paymentTransactionID"]
 		if !ok {
 			log.Error().Msg("Payment transaction ID not found in metadata")
 			return models.Response(400, models.Error{ErrorMessages: []models.Message{{Code: "400", Message: "Payment transaction ID not found in metadata"}}}), nil
+		}
+
+		// update rent contract status
+		contract := database_rent_contract.UpdateRentContractStatusFromPaymentIdentifier(ctx, data.ID, database_rent_contract.RentContractStatusActive)
+		if contract == nil {
+			log.Error().Msg("Failed to update rent contract status")
 		}
 
 		_, err = database_payments.CompletePaymentTransaction(ctx, paymentTransactionId)

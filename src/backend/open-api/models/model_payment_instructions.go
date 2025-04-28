@@ -10,10 +10,8 @@
 
 package openapi
 
-
-
-
 type PaymentInstructions struct {
+	PaymentTransactionId string `json:"paymentTransactionId"`
 
 	PaymentMethodId PaymentMethod `json:"paymentMethodId"`
 
@@ -24,7 +22,8 @@ type PaymentInstructions struct {
 // AssertPaymentInstructionsRequired checks if the required fields are not zero-ed
 func AssertPaymentInstructionsRequired(obj PaymentInstructions) error {
 	elements := map[string]interface{}{
-		"paymentMethodId": obj.PaymentMethodId,
+		"paymentMethodId":      obj.PaymentMethodId,
+		"paymentTransactionId": obj.PaymentTransactionId,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

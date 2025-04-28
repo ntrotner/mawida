@@ -9,7 +9,7 @@ import { TOKEN_REFRESH_IN_MS } from "../lib/open-api/helpers";
 import { appState } from "../lib/states/app";
 import { refreshToken } from "../lib/states/authentication";
 
-export const prerender = true;
+export const prerender = false;
 export const ssr = false;
 
 function setupLocalization() {
