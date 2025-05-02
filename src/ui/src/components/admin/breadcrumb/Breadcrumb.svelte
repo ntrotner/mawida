@@ -4,7 +4,15 @@
     import { t } from "$lib/i18n";
     import { page } from "$app/stores";
     import { ROUTES } from "$lib/routes/routes";
+    import { goto } from "$app/navigation";
+    import { usersState } from "$lib/states/users";
+
     type SegmentType = { name: string; href: string };
+
+    function getEmailFromId(id: string) {
+        const user = usersState.getSyncState()?.find((user) => user.id === id);
+        return user?.email;
+    }
 
     $: segments = $page.url.pathname
         .split("/")
@@ -15,22 +23,46 @@
                 const [accPath, items] = acc;
                 const newPath = `${accPath}${accPath.endsWith("/") ? "" : "/"}${segment}`;
 
-                if (acc[1].at(-1)?.name === "locations" && segment !== "create") {
+                if (
+                    acc[1].at(-1)?.name === "locations" &&
+                    segment !== "create"
+                ) {
                     return [newPath, [...items, undefined]];
                 }
 
-                return [newPath, [...items, { name: segment, href: newPath }]];
+                if (acc[1].at(-1)?.name === "admin.breadcrumb.customers") {
+                    return [
+                        newPath,
+                        [
+                            ...items,
+                            {
+                                name: getEmailFromId(segment) ?? "",
+                                href: newPath,
+                            },
+                        ],
+                    ];
+                }
+
+                return [
+                    newPath,
+                    [
+                        ...items,
+                        { name: `admin.breadcrumb.${segment}`, href: newPath },
+                    ],
+                ];
             },
             [ROUTES.ADMIN, []],
         );
-
 </script>
 
 <Breadcrumb.Root>
     <Breadcrumb.List>
         <Breadcrumb.Item>
-            <Breadcrumb.Link href={ROUTES.ADMIN}
-                >{$t("admin.home")}</Breadcrumb.Link
+            <Breadcrumb.Link
+                ><span
+                    class="cursor-pointer"
+                    on:click={() => goto(ROUTES.ADMIN)}>{$t("admin.home")}</span
+                ></Breadcrumb.Link
             >
         </Breadcrumb.Item>
 
@@ -41,16 +73,20 @@
                 </Breadcrumb.Separator>
                 <Breadcrumb.Item>
                     {#if i === segments[1].length - 1}
-                        <Breadcrumb.Page
-                            >{$t(
-                                `admin.breadcrumb.${segment.name}`,
-                            )}</Breadcrumb.Page
+                        <Breadcrumb.Page>
+                            <span
+                                class="cursor-pointer"
+                                on:click={() => goto(segment.href)}
+                                >{$t(segment.name)}</span
+                            ></Breadcrumb.Page
                         >
                     {:else}
-                        <Breadcrumb.Link href={segment.href}
-                            >{$t(
-                                `admin.breadcrumb.${segment.name}`,
-                            )}</Breadcrumb.Link
+                        <Breadcrumb.Link
+                            ><span
+                                class="cursor-pointer"
+                                on:click={() => goto(segment.href)}
+                                >{$t(segment.name)}</span
+                            ></Breadcrumb.Link
                         >
                     {/if}
                 </Breadcrumb.Item>

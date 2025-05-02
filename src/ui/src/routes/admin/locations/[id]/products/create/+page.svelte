@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { configState } from "$lib/states/config/config";
+    import { ProductConfigKey, type ProductConfig } from "$lib/states/config/collection/product";
     import { t } from "$lib/i18n";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Form from "$lib/components/ui/form/index.js";
@@ -12,8 +14,10 @@
     import Alert from "../../../../../../components/alert/Alert.svelte";
     import { page } from "$app/stores";
     import { formatStringToCurrency } from "$lib/helpers/price";
+    import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "$lib/components/ui/select";
     // Get the location ID from the URL
     const locationId = $page.params.id;
+    const productConfig = configState.getConfig<ProductConfig>(ProductConfigKey);
 
     // Product form data
     const productData = {
@@ -27,7 +31,7 @@
         },
         images: [] as Array<{ id: string; name: string; data: string }>,
         documents: [] as Array<{ id: string; name: string; data: string }>,
-        dynamicAttributes: {},
+        category: $productConfig?.categoryFallback.id ?? '',
     };
 
     // Initialize superForm
@@ -57,7 +61,7 @@
                 if (result) {
                     const base64Data = result.split(",")[1]; // Remove data URL prefix
                     images.push({
-                        id: crypto.randomUUID(),
+                        id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
                         name: file.name,
                         data: base64Data,
                     });
@@ -87,7 +91,7 @@
                 if (result) {
                     const base64Data = result.split(",")[1]; // Remove data URL prefix
                     documents.push({
-                        id: crypto.randomUUID(),
+                        id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
                         name: file.name,
                         data: base64Data,
                     });
@@ -133,7 +137,9 @@
                 },
                 images: $form.images || [],
                 documents: $form.documents || [],
-                dynamicAttributes: $form.dynamicAttributes || {},
+                dynamicAttributes: {
+                    category: $form.category || "other",
+                },
             });
 
             if (result) {
@@ -185,6 +191,39 @@
                             disabled={$isSubmitting}
                             placeholder={$t("admin.products.table.name")}
                         />
+                        <Form.FieldErrors
+                            class="text-xs text-destructive mt-1"
+                        />
+                    </Form.Control>
+                </Form.Field>
+
+                <Form.Field form={productForm} name="category">
+                    <Form.Control let:attrs>
+                        <Form.Label>
+                            <span class="font-bold"
+                                >{$t("admin.products.create.form-category")}</span
+                            >
+                        </Form.Label>
+                        <Select {...attrs} 
+                        onSelectedChange={(value) => $form.category = value?.value ? String(value.value) : $productConfig?.categoryFallback.id ?? ''} 
+                        required 
+                        disabled={$isSubmitting}>
+                            <SelectTrigger>
+                                <SelectValue placeholder={$t($productConfig?.categoryFallback.translationKey ?? "product.category.undefined")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {#if $productConfig?.categoryFallback}
+                                    <SelectItem value={$productConfig?.categoryFallback.id}>
+                                        {$t($productConfig?.categoryFallback.translationKey ?? "product.category.undefined")}
+                                    </SelectItem>
+                                {/if}
+                                {#each ($productConfig?.categories || []) as category}
+                                    <SelectItem value={category.id}>
+                                        {$t(category.translationKey)}
+                                    </SelectItem>
+                                {/each}
+                            </SelectContent>
+                        </Select>
                         <Form.FieldErrors
                             class="text-xs text-destructive mt-1"
                         />

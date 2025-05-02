@@ -3,6 +3,7 @@ import { DefaultState } from "../common/state";
 import type { Config, Configuration } from "./model";
 import { defaultLoggerConfig } from "./collection/logger";
 import { defaultAppConfig } from "../status";
+import { defaultProductConfig } from "./collection/product";
 
 /**
  * ConfigState class is used to manage the state of the configs.
@@ -13,7 +14,8 @@ export class ConfigState extends DefaultState<Configuration> {
     super();
     this.setState({loaded: false, configMap: {
       ...defaultAppConfig,
-      ...defaultLoggerConfig
+      ...defaultLoggerConfig,
+      ...defaultProductConfig
     }})
   }
 

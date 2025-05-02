@@ -90,8 +90,63 @@ const config = ({
       loader: async () => (
         await import('./languages/profile/de.json')
       ).default,
+    },
+    {
+      locale: 'en',
+      key: 'product',
+      loader: async () => (
+        await import('./languages/product/en.json')
+      ).default,
+    },
+    {
+      locale: 'de',
+      key: 'product',
+      loader: async () => (
+        await import('./languages/product/de.json')
+      ).default,
+    },
+    {
+      locale: 'en',
+      key: 'shop',
+      loader: async () => (
+        await import('./languages/shop/en.json')
+      ).default,
+    },
+    {
+      locale: 'de',
+      key: 'shop',
+      loader: async () => (
+        await import('./languages/shop/de.json')
+      ).default,
+    },
+    {
+      locale: 'en',
+      key: 'location',
+      loader: async () => (
+        await import('./languages/location/en.json')
+      ).default,
+    },
+    {
+      locale: 'de',
+      key: 'location',
+      loader: async () => (
+        await import('./languages/location/de.json')
+      ).default,
+    },
+    {
+      locale: 'en',
+      key: 'customer',
+      loader: async () => (
+        await import('./languages/customer/en.json')
+      ).default,
+    },
+    {
+      locale: 'de',
+      key: 'customer',
+      loader: async () => (
+        await import('./languages/customer/de.json')
+      ).default,
     }
   ],
 });
-
 export const { t, loading, locales, locale, translations, loadTranslations, addTranslations, setLocale, setRoute } = new i18n(config);

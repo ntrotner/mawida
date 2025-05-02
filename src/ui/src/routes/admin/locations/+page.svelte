@@ -6,26 +6,30 @@
   import * as Table from "$lib/components/ui/table/index.js";
   import { ROUTES } from "$lib/routes/routes";
   import { goto } from "$app/navigation";
-  import { PlusCircled, HamburgerMenu, File } from "svelte-radix";
+  import { PlusCircled, HamburgerMenu, File, DotsHorizontal } from "svelte-radix";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { writable } from "svelte/store";
+  import * as Menubar from "$lib/components/ui/menubar/index.js";
 
   let locations = locationState.getAsyncState();
   let loading = writable(true);
-  
+
   // Pagination
   let currentPage = 1;
   let itemsPerPage = 10;
-  
+
   $: totalPages = Math.ceil(($locations?.length || 0) / itemsPerPage);
-  $: paginatedLocations = $locations ? 
-    $locations.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage) 
+  $: paginatedLocations = $locations
+    ? $locations.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage,
+      )
     : [];
-  
+
   function prevPage() {
     if (currentPage > 1) currentPage--;
   }
-  
+
   function nextPage() {
     if (currentPage < totalPages) currentPage++;
   }
@@ -97,45 +101,77 @@
               <Table.Cell>{location.buildingName || "-"}</Table.Cell>
               <Table.Cell class="text-right">
                 <div class="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    on:click={() => {
-                      goto(
-                        ROUTES.ADMIN_PRODUCTS.replace(
-                          "{locationId}",
-                          location.id || "",
-                        ),
-                      );
-                    }}
-                  >
-                    {$t("admin.locations.products.view")}
-                  </Button>
+                  <Menubar.Root class="p-0 border-none bg-transparent">
+                    <Menubar.Menu>
+                      <Menubar.Trigger>
+                        <DotsHorizontal class="w-4 h-4" />
+                      </Menubar.Trigger>
+                      <Menubar.Content>
+                        <Menubar.Item
+                          on:click={() => {
+                            goto(
+                              ROUTES.ADMIN_PRODUCTS.replace(
+                                "{locationId}",
+                                location.id || "",
+                              ),
+                            );
+                          }}
+                        >
+                          {$t("admin.locations.products.view")}
+                        </Menubar.Item>
+                      </Menubar.Content>
+                    </Menubar.Menu>
+                  </Menubar.Root>
                 </div>
               </Table.Cell>
             </Table.Row>
           {/each}
         </Table.Body>
       </Table.Root>
-      
+
       <!-- Simple Pagination -->
       <div class="flex items-center justify-between px-4 py-3 border-t">
         <div class="text-sm text-gray-700">
-          {$t("common.pagination.showing")} <span class="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> {$t("common.pagination.to")} 
-          <span class="font-medium">{Math.min(currentPage * itemsPerPage, $locations?.length || 0)}</span> {$t("common.pagination.of")} 
-          <span class="font-medium">{$locations?.length || 0}</span> {$t("common.pagination.entries")}
+          {$t("common.pagination.showing")}
+          <span class="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span
+          >
+          {$t("common.pagination.to")}
+          <span class="font-medium"
+            >{Math.min(
+              currentPage * itemsPerPage,
+              $locations?.length || 0,
+            )}</span
+          >
+          {$t("common.pagination.of")}
+          <span class="font-medium">{$locations?.length || 0}</span>
+          {$t("common.pagination.entries")}
         </div>
-        
+
         <div class="flex gap-2">
-          <Button variant="outline" size="sm" disabled={currentPage === 1} on:click={prevPage}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage === 1}
+            on:click={prevPage}
+          >
             {$t("common.pagination.previous")}
           </Button>
-          
+
           <div class="flex items-center">
-            <span class="mx-2 text-sm">{$t("common.pagination.page")} {currentPage} {$t("common.pagination.of")} {totalPages}</span>
+            <span class="mx-2 text-sm"
+              >{$t("common.pagination.page")}
+              {currentPage}
+              {$t("common.pagination.of")}
+              {totalPages}</span
+            >
           </div>
-          
-          <Button variant="outline" size="sm" disabled={currentPage === totalPages} on:click={nextPage}>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage === totalPages}
+            on:click={nextPage}
+          >
             {$t("common.pagination.next")}
           </Button>
         </div>

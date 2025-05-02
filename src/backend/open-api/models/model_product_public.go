@@ -10,27 +10,30 @@
 
 package openapi
 
-type ProductPublic struct {
+import (
+	"template_backend/infrastructure/validators"
+)
 
+type ProductPublic struct {
 	// Name of the product
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,min=2,max=100"`
 
 	// Description of the product
-	Description string `json:"description"`
+	Description string `json:"description" validate:"required,min=0,max=1000"`
 
 	// List of base64 encoded image data with IDs and names
-	Images []ProductImagesInner `json:"images,omitempty"`
+	Images []ProductImagesInner `json:"images,omitempty" validate:"omitempty"`
 
 	// List of base64 encoded document data with IDs and names
-	Documents []ProductDocumentsInner `json:"documents,omitempty"`
+	Documents []ProductDocumentsInner `json:"documents,omitempty" validate:"omitempty"`
 
 	// Location ID of the product
-	Location string `json:"location"`
+	Location string `json:"location" validate:"required"`
 
-	Pricing ProductPricing `json:"pricing"`
+	Pricing ProductPricing `json:"pricing" validate:"required"`
 
 	// Dynamic attributes for the product
-	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty"`
+	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty" validate:"dynamicAttributes"`
 
 	// Unique identifier for the product
 	ID string `json:"id,omitempty"`
@@ -82,5 +85,5 @@ func AssertProductPublicRequired(obj ProductPublic) error {
 
 // AssertProductPublicConstraints checks if the values respects the defined constraints
 func AssertProductPublicConstraints(obj ProductPublic) error {
-	return nil
+	return validators.Validate.Struct(obj)
 }

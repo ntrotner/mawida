@@ -34,7 +34,7 @@ type Product struct {
 	Pricing ProductPricing `json:"pricing" validate:"required"`
 
 	// Dynamic attributes for the product
-	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty" validate:"omitempty"`
+	DynamicAttributes map[string]interface{} `json:"dynamicAttributes,omitempty" validate:"dynamicAttributes,omitempty"`
 }
 
 // AssertProductRequired checks if the required fields are not zero-ed
