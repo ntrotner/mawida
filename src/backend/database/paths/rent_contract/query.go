@@ -34,6 +34,7 @@ func createFindRentContractQuery(id *string, fields []interface{}) database_comm
 			"paymentMethodId",
 			"pickupLocationId",
 			"returnLocationId",
+			"paymentTransactionId",
 			"additionalNotes",
 			"dynamicAttributes",
 			"createdAt",

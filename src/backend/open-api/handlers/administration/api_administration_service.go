@@ -150,7 +150,7 @@ func (s *AdministrationAPIService) AdministrationRefundDepositPost(ctx context.C
 		return models.Response(404, models.Error{ErrorMessages: []models.Message{{Code: "101", Message: "Rent contract not found"}}}), nil
 	}
 
-	_, err = payment.RefundPrice(rentContract.PaymentIdentifier.ID, refundDeposit.DepositRefundedAmount)
+	_, err = payment.RefundPrice(rentContract.PaymentIdentifier.PaymentIntent, refundDeposit.DepositRefundedAmount)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to refund price")
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to refund price"}}}), nil

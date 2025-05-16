@@ -111,7 +111,7 @@ func UpdateRentContractStatus(ctx context.Context, id string, newStatus RentCont
 	return contract
 }
 
-func UpdateRentContractStatusFromPaymentIdentifier(ctx context.Context, paymentIdentifier string, status RentContractStatus) *RentContract {
+func UpdateRentContractStatusFromPaymentIdentifier(ctx context.Context, paymentIdentifier string, paymentTransactionId string, paymentIntent string, status RentContractStatus) *RentContract {
 	if DatabaseRentContract == nil {
 		return nil
 	}
@@ -123,6 +123,8 @@ func UpdateRentContractStatusFromPaymentIdentifier(ctx context.Context, paymentI
 	}
 
 	contract.Status = status
+	contract.PaymentIdentifier.PaymentIntent = paymentIntent
+	contract.PaymentTransactionID = paymentTransactionId
 	contract.UpdatedAt = time.Now().Unix()
 
 	_, err := DatabaseRentContract.Put(ctx, contract.ID, contract)

@@ -100,7 +100,6 @@ func (s *RentalAPIService) RentalsRentContractIdCancelPost(ctx context.Context, 
 	_, err := payment.DeleteCheckoutSession(contract.PaymentIdentifier.ID)
 	if err != nil {
 		log.Error().Msg(err.Error())
-		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to delete checkout session"}}}), nil
 	}
 
 	contract.Status = database_rent_contract.RentContractStatusCancelled
@@ -258,7 +257,13 @@ func (s *RentalAPIService) RentalsRentContractIdReturnPost(ctx context.Context, 
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to update product rental status"}}}), nil
 	}
 
-	_, err := database_payments.ReturnPaymentTransaction(ctx, contract.PaymentTransactionID)
+	_, err := payment.RefundPrice(contract.PaymentIdentifier.PaymentIntent, contract.Deposit)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to refund price")
+		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to refund price"}}}), nil
+	}
+
+	_, err = database_payments.ReturnPaymentTransaction(ctx, contract.PaymentTransactionID)
 	if err != nil {
 		return models.Response(401, models.Error{ErrorMessages: []models.Message{{Code: "001", Message: "Failed to return payment transaction"}}}), nil
 	}

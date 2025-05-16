@@ -1,5 +1,6 @@
 package payment
 
 type CheckoutSessionIdentifier struct {
-	ID string
+	ID            string
+	PaymentIntent string
 }
