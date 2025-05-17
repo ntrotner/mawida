@@ -272,6 +272,7 @@
 						>
 							<Checkbox checked={inspected} />
 							{$t("shop.pickup.damage.inspected")}
+							<span class="text-red-600">*</span>
 						</p>
 						<Button
 							variant="default"
