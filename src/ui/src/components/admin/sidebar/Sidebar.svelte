@@ -11,6 +11,8 @@
     import BarChart from "svelte-radix/BarChart.svelte";
     import { ROUTES } from "$lib/routes/routes";
     import { page } from "$app/state";
+    import { Avatar, AvatarFallback, AvatarImage } from "$lib/components/ui/avatar";
+    import IconSmall from "$lib/assets/icon-small.png";
 
     $: productId = page.params.productId;
 
@@ -33,7 +35,12 @@
             <div
                 class="home-button h-5 w-5 bg-primary rounded-xl flex items-center justify-center text-primary-foreground font-bold"
             >
-                M
+            <Avatar class="rounded-none h-6 w-6">
+                <AvatarImage src={IconSmall} />
+                <AvatarFallback>
+                    MWD
+                </AvatarFallback>
+            </Avatar>
             </div>
         </Button>
     </div>

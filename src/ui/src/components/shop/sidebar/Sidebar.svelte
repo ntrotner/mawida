@@ -6,9 +6,10 @@
 
     import Person from "svelte-radix/Person.svelte";
     import { ROUTES } from "$lib/routes/routes";
-    import { page } from "$app/state";
     import { ShoppingCart } from "lucide-svelte";
     import { authenticationState } from "$lib/states/authentication";
+    import { Avatar, AvatarFallback, AvatarImage } from "$lib/components/ui/avatar";
+    import IconSmall from "$lib/assets/icon-small.png";
 
     const authState = authenticationState.getAsyncState();
     const isAdmin = authenticationState.isAdmin();
@@ -32,7 +33,12 @@
             <div
                 class="home-button h-5 w-5 bg-primary rounded-xl flex items-center justify-center text-primary-foreground font-bold"
             >
-                M
+            <Avatar class="rounded-none h-6 w-6">
+                <AvatarImage src={IconSmall} />
+                <AvatarFallback>
+                    MWD
+                </AvatarFallback>
+            </Avatar>
             </div>
         </Button>
     </div>

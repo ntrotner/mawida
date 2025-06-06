@@ -4,8 +4,9 @@
     import { authenticationState } from "$lib/states/authentication";
     import { t } from "$lib/i18n";
     import { ROUTES } from "$lib/routes";
-    import { Avatar, AvatarFallback } from "$lib/components/ui/avatar";
+    import { Avatar, AvatarFallback, AvatarImage } from "$lib/components/ui/avatar";
     import { goto } from "$app/navigation";
+    import IconSmall from "$lib/assets/icon-small.png";
     export let navigationItems: { key: string; action: () => void }[] = [];
 
     const isAdmin = userState.isAdmin();
@@ -15,7 +16,8 @@
 <nav class="flex items-center justify-between px-10 py-4 bg-white shadow-sm">
     <!-- Company Logo -->
     <div class="flex-shrink-0">
-        <Avatar>
+        <Avatar class="rounded-none h-8 w-8">
+            <AvatarImage src={IconSmall} />
             <AvatarFallback>
                 MWD
             </AvatarFallback>
